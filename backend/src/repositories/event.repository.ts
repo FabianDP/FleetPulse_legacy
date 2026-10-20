@@ -3,20 +3,21 @@ import type { TelemetryEvent } from "../validators/event.validator";
 
 export async function findEventById(
   client: PoolClient,
-  eventId: string
+  eventId: string,
+  observedAt: string
 ) {
-  const result = await client.query(
+  const result = await client.query<Omit<TelemetryEvent, "observedAt"> & { sameObservedAt: boolean }>(
     `SELECT
        event_id AS "eventId",
        vehicle_id AS "vehicleId",
-       observed_at AS "observedAt",
+       observed_at = $2::timestamptz AS "sameObservedAt",
        latitude,
        longitude,
        speed_kph AS "speedKph",
        ignition_on AS "ignitionOn"
      FROM telemetry_events
      WHERE event_id = $1`,
-    [eventId]
+    [eventId, observedAt]
   );
 
   return result.rows[0];

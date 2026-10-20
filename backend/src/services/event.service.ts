@@ -1,6 +1,7 @@
 import { pool } from "../config/database";
 import {
   telemetryEventSchema,
+  eventRejectionReason,
   type TelemetryEvent
 } from "../validators/event.validator";
 import {
@@ -17,14 +18,13 @@ type BatchError = {
 };
 
 function sameEvent(
-  existing: any,
+  existing: (Omit<TelemetryEvent, "observedAt"> & { sameObservedAt: boolean }) | undefined,
   incoming: TelemetryEvent
 ): boolean {
   return (
-    existing.eventId === incoming.eventId &&
+    existing !== undefined && existing.eventId === incoming.eventId &&
     existing.vehicleId === incoming.vehicleId &&
-    new Date(existing.observedAt).getTime() ===
-      new Date(incoming.observedAt).getTime() &&
+    existing.sameObservedAt &&
     existing.latitude === incoming.latitude &&
     existing.longitude === incoming.longitude &&
     existing.speedKph === incoming.speedKph &&
@@ -54,7 +54,7 @@ export async function ingestBatch(events: unknown[]) {
           typeof rawEvent.eventId === "string"
             ? rawEvent.eventId
             : undefined,
-        reason: "INVALID_EVENT"
+        reason: eventRejectionReason(parsed.error)
       });
 
       continue;
@@ -71,7 +71,8 @@ export async function ingestBatch(events: unknown[]) {
       if (!inserted) {
         const existing = await findEventById(
           client,
-          event.eventId
+          event.eventId,
+          event.observedAt
         );
 
         if (sameEvent(existing, event)) {

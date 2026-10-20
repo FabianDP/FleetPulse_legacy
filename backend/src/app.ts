@@ -2,16 +2,16 @@ import express from "express";
 import cors from "cors";
 import { pool } from "./config/database";
 import { eventRouter } from "./routes/event.routes";
+import { httpErrorHandler } from "./middlewares/http-error.middleware";
 
 export const app = express();
-
-app.use("/api/events", eventRouter);
 
 app.use(cors({
   origin: "http://localhost:4200"
 }));
 
 app.use(express.json({ limit: "1mb" }));
+app.use("/api/events", eventRouter);
 
 app.get("/api/health", async (_req, res) => {
   try {
@@ -28,3 +28,8 @@ app.get("/api/health", async (_req, res) => {
     });
   }
 });
+
+app.use((_req, res) => {
+  res.status(404).json({ error: "NOT_FOUND" });
+});
+app.use(httpErrorHandler);

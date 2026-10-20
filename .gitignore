@@ -6,3 +6,4 @@ dist/
 coverage/
 .angular/
 *.log
+*.dump
