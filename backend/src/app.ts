@@ -3,6 +3,7 @@ import cors from "cors";
 import { pool } from "./config/database";
 import { eventRouter } from "./routes/event.routes";
 import { httpErrorHandler } from "./middlewares/http-error.middleware";
+import { dashboardRouter } from "./routes/dashboard.routes";
 
 export const app = express();
 
@@ -28,6 +29,8 @@ app.get("/api/health", async (_req, res) => {
     });
   }
 });
+
+app.use("/api", dashboardRouter);
 
 app.use((_req, res) => {
   res.status(404).json({ error: "NOT_FOUND" });

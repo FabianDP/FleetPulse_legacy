@@ -7,6 +7,10 @@ export const httpErrorHandler: ErrorRequestHandler = (error: unknown, _req, res,
   }
   const type = typeof error === "object" && error !== null && "type" in error
     ? error.type : undefined;
+  if (error instanceof URIError) {
+    res.status(400).json({ error: "INVALID_PATH" });
+    return;
+  }
   if (type === "entity.parse.failed") {
     res.status(400).json({ error: "INVALID_JSON" });
     return;

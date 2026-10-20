@@ -1,4 +1,5 @@
 import { pool } from "../config/database";
+import { streamService, type StreamMessage } from "./stream.service";
 import {
   telemetryEventSchema,
   eventRejectionReason,
@@ -61,6 +62,7 @@ export async function ingestBatch(events: unknown[]) {
     }
 
     const event = parsed.data;
+    const notifications: StreamMessage[] = [];
     const client = await pool.connect();
 
     try {
@@ -90,8 +92,16 @@ export async function ingestBatch(events: unknown[]) {
         continue;
       }
 
-      await updateVehicleState(client, event);
-      await createOverspeedAlert(client, event);
+      const stateChanged = await updateVehicleState(client, event);
+      const alertCreated = await createOverspeedAlert(client, event);
+      const envelope = { eventId: event.eventId, vehicleId: event.vehicleId, observedAt: event.observedAt };
+      if (stateChanged) {
+        const status = !event.ignitionOn ? "OFF" : event.speedKph > 0 ? "MOVING" : "STOPPED";
+        notifications.push({ ...envelope, type: "vehicle.updated", data: { ...event, status } });
+      }
+      if (alertCreated) {
+        notifications.push({ ...envelope, type: "alert.created", data: { ...event, type: "OVERSPEED" } });
+      }
 
       await client.query("COMMIT");
       accepted++;
@@ -101,6 +111,8 @@ export async function ingestBatch(events: unknown[]) {
     } finally {
       client.release();
     }
+    // Outside the transaction handler: a notification must never cause rollback.
+    for (const notification of notifications) streamService.publish(notification);
   }
 
   return {

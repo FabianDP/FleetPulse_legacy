@@ -1,4 +1,4 @@
-# Ingesta: segunda iteración
+# FleetPulse: ingesta, consultas y SSE
 
 Desde `backend`, ejecutar `npm run typecheck` y `npm test`.
 En PowerShell con scripts deshabilitados, utilizar `npm.cmd`.
@@ -55,6 +55,64 @@ Hasta aplicarla, una base con `VARCHAR(100)` sigue rechazando IDs más largos.
 `TEXT` tampoco elimina los límites físicos de los índices de PostgreSQL;
 identificadores excepcionalmente grandes requieren un diseño adicional.
 
-Quedan pendientes integración con PostgreSQL real, migración verificada,
-duplicados/conflictos concurrentes, replays completos y entrega de consultas,
-stream, Angular y reproductor. Las pruebas con dobles no sustituyen esa evidencia.
+## Consultas del dashboard
+
+Todas las consultas devuelven arrays JSON con nombres camelCase.
+Las fechas se serializan en UTC conservando microsegundos. No hay paginación
+en esta iteración, por lo que historiales muy grandes requieren trabajo posterior.
+
+| Endpoint | Filtros opcionales | Orden |
+|---|---|---|
+| `GET /api/vehicles` | `search`: subcadena literal sin distinguir mayúsculas; `vehicleId`: exacto; `status`: `OFF`, `MOVING`, `STOPPED` | `vehicleId ASC` |
+| `GET /api/vehicles/:vehicleId/events` | Ninguno | `observedAt ASC, eventId ASC` |
+| `GET /api/alerts` | `vehicleId`: exacto; `type`: `OVERSPEED` | `observedAt DESC, eventId ASC` |
+
+Los filtros se combinan con AND. El historial de un vehículo desconocido devuelve
+200 con `[]`, una de las alternativas permitidas por el contrato. Valores vacíos,
+parámetros repetidos, nombres desconocidos y enums inválidos devuelven 400
+`INVALID_QUERY`; una ruta con escape inválido devuelve 400 `INVALID_PATH`.
+El contrato común exige búsqueda por vehículo pero no fija filtros especializados
+ni orden de alertas; no hay otro requisito especializado en este repositorio.
+Los filtros adicionales y el orden de alertas anteriores son decisiones de esta API.
+Las alertas incluyen todos los datos del evento histórico, `id` como string,
+`type` y `createdAt`. Los vehículos incluyen los siete campos del evento y `status`.
+
+## Stream local y seguridad
+
+El servidor escucha exclusivamente en `127.0.0.1`. Consultas y SSE permiten
+conexiones loopback sin Origin (CLI local) o con Origin exactamente
+`http://localhost:4200`. IP remota u otro Origin reciben 403. CORS permite ese
+origen Angular; no concede acceso de escritura sin `X-API-Key`.
+No se usa la clave del productor en Angular, URLs ni `EventSource`.
+Este control es para una demo local, no sustituye autenticación de usuarios:
+no publicar mediante túneles o proxies. Una publicación futura debe añadir
+autenticación de sesión para lecturas/SSE y revisar la política de origen.
+
+Abrir `new EventSource('http://127.0.0.1:3000/api/stream')` desde Angular en
+`http://localhost:4200`. Registrar listeners con `addEventListener` para
+`vehicle.updated` y `alert.created`. Cada mensaje incluye `type`, `eventId`,
+`vehicleId`, `observedAt` y `data`: el estado completo para vehículo, o el evento
+con `type: 'OVERSPEED'` para alerta. La alerta SSE se identifica por `eventId`;
+su identificador SQL y `createdAt` se obtienen del snapshot de alertas.
+
+Se envían comentarios heartbeat cada 15 segundos y una sugerencia de reintento
+de 3 segundos. Los comentarios no son eventos de dominio. Se eliminan suscriptores
+y temporizadores al desconectar; clientes lentos se desconectan para evitar
+acumular memoria. SIGINT/SIGTERM cierra streams antes de cerrar servidor y pool.
+
+Los mensajes se publican después de COMMIT y liberar la conexión. Se respetan
+los booleanos devueltos por el repositorio: un evento tardío puede emitir solo
+`alert.created`. Duplicados, conflictos, inválidos y rollback no publican.
+El transporte es en memoria y para un único proceso; no hay replay ni garantía
+durable de entrega. Una caída entre COMMIT y publicación puede perder el aviso.
+Al abrir/reconectar, recuperar snapshots GET y continuar con el stream; el cliente
+debe reconciliar por eventId y comparar instante/desempate antes de reemplazar
+estados, también ante publicaciones concurrentes. En producción, evaluar outbox
+y distribución entre instancias si se requiere entrega fiable.
+
+Las pruebas verifican HTTP, dos clientes SSE, heartbeat, limpieza, backpressure,
+validación de consultas, parámetros SQL y cláusulas de orden, más ausencia de
+emisiones ante duplicados y rollback (incluido COMMIT fallido). No ejecutan el
+ORDER BY en PostgreSQL real ni sustituyen pruebas de integración. Quedan pendientes
+la migración verificada, concurrencia real, revalidación de los dos replays sobre
+esta versión, Angular y reproductor. No se han alterado los datos existentes.
