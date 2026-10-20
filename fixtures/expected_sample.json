@@ -1,0 +1,29 @@
+{
+  "input": 24,
+  "accepted": 20,
+  "duplicates": 2,
+  "rejected": 2,
+  "vehicles": 8,
+  "overspeed_alerts": 4,
+  "latest_by_vehicle": {
+    "VEH-001": "E-001-02",
+    "VEH-002": "E-002-02",
+    "VEH-003": "E-003-03",
+    "VEH-004": "E-004-03",
+    "VEH-005": "E-005-03",
+    "VEH-006": "E-006-02",
+    "VEH-007": "E-007-02",
+    "VEH-008": "E-008-02"
+  },
+  "status_by_vehicle": {
+    "VEH-001": "MOVING",
+    "VEH-002": "MOVING",
+    "VEH-003": "MOVING",
+    "VEH-004": "MOVING",
+    "VEH-005": "MOVING",
+    "VEH-006": "MOVING",
+    "VEH-007": "STOPPED",
+    "VEH-008": "MOVING"
+  },
+  "note": "La alerta de exceso se crea por cada evento valido aceptado cuya velocidad sea estrictamente mayor que 80 km/h. No se genera para duplicados o eventos rechazados."
+}
