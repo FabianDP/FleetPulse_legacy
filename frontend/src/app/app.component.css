@@ -1,0 +1,110 @@
+.dashboard {
+  max-width: 1100px;
+  margin: 40px auto;
+  padding: 24px;
+  font-family: Arial, sans-serif;
+}
+
+h1 {
+  color: #163a63;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 24px;
+}
+
+th, td {
+  padding: 14px;
+  border-bottom: 1px solid #ddd;
+  text-align: left;
+}
+
+th {
+  background: #163a63;
+  color: white;
+}
+
+tr:hover {
+  background: #f3f6fa;
+}
+
+
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin: 24px 0;
+}
+
+.stat-card {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.stat-card span {
+  color: #64748b;
+  font-size: 14px;
+}
+
+.stat-card strong {
+  color: #163a63;
+  font-size: 32px;
+}
+
+@media (max-width: 768px) {
+  .stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+
+.alerts-section {
+  margin-top: 40px;
+  padding-bottom: 40px;
+}
+
+.alerts-section h2 {
+  color: #163a63;
+  margin-bottom: 18px;
+}
+
+.alert-label {
+  background: #fee2e2;
+  color: #991b1b;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+
+
+
+.vehicle-link {
+  border: none;
+  background: transparent;
+  color: #1d4ed8;
+  font: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.vehicle-link:hover {
+  color: #1e40af;
+}
+
+.history-section {
+  margin-top: 36px;
+}
+
+.history-section h2 {
+  color: #163a63;
+}

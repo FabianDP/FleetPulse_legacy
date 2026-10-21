@@ -1,0 +1,120 @@
+<main class="dashboard">
+  <h1>FleetPulse</h1>
+
+  <section class="stats" *ngIf="!loading && !error">
+    <div class="stat-card">
+      <span>Total vehículos</span>
+      <strong>{{ totalVehicles }}</strong>
+    </div>
+
+    <div class="stat-card">
+      <span>En movimiento</span>
+      <strong>{{ movingVehicles }}</strong>
+    </div>
+
+    <div class="stat-card">
+      <span>Detenidos</span>
+      <strong>{{ stoppedVehicles }}</strong>
+    </div>
+
+    <div class="stat-card">
+      <span>Apagados</span>
+      <strong>{{ offVehicles }}</strong>
+    </div>
+  </section>
+  <p>Monitoreo de flota en tiempo real</p>
+
+  <p *ngIf="loading">Cargando vehículos...</p>
+  <p *ngIf="error">{{ error }}</p>
+
+  <table *ngIf="!loading && !error">
+    <thead>
+      <tr>
+        <th>Vehículo</th>
+        <th>Velocidad</th>
+        <th>Estado</th>
+        <th>Última actualización</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      <tr *ngFor="let vehicle of vehicles">
+        <td>
+          <button
+            type="button"
+            class="vehicle-link"
+            (click)="selectVehicle(vehicle.vehicleId)"
+          >
+            {{ vehicle.vehicleId }}
+          </button>
+        </td>
+        <td>{{ vehicle.speedKph }} km/h</td>
+        <td>{{ vehicle.status }}</td>
+        <td>{{ vehicle.observedAt | date: "medium" }}</td>
+      </tr>
+    </tbody>
+  </table>
+  <section class="history-section" *ngIf="selectedVehicle">
+    <h2>Historial GPS — {{ selectedVehicle }}</h2>
+
+    <p *ngIf="historyLoading">Cargando historial...</p>
+    <p *ngIf="historyError">{{ historyError }}</p>
+
+    <table *ngIf="!historyLoading && !historyError">
+      <thead>
+        <tr>
+          <th>Evento</th>
+          <th>Fecha</th>
+          <th>Latitud</th>
+          <th>Longitud</th>
+          <th>Velocidad</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let event of vehicleEvents">
+          <td>{{ event.eventId }}</td>
+          <td>{{ event.observedAt | date: "medium" }}</td>
+          <td>{{ event.latitude }}</td>
+          <td>{{ event.longitude }}</td>
+          <td>{{ event.speedKph }} km/h</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+  <section class="alerts-section">
+    <h2>Alertas de velocidad</h2>
+
+    <p *ngIf="alertsError">{{ alertsError }}</p>
+
+    <p *ngIf="!alertsError && alerts.length === 0">
+      No hay alertas registradas.
+    </p>
+
+    <table *ngIf="!alertsError && alerts.length > 0">
+      <thead>
+        <tr>
+          <th>Vehículo</th>
+          <th>Evento</th>
+          <th>Velocidad</th>
+          <th>Tipo</th>
+          <th>Fecha</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let alert of alerts">
+          <td>{{ alert.vehicleId }}</td>
+          <td>{{ alert.eventId }}</td>
+          <td>{{ alert.speedKph }} km/h</td>
+          <td>
+            <span class="alert-label">{{ alert.type }}</span>
+          </td>
+          <td>{{ alert.observedAt | date: "medium" }}</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p>Total de alertas: {{ alerts.length }}</p>
+  </section>
+
+  <p *ngIf="!loading && !error">Total de vehículos: {{ vehicles.length }}</p>
+</main>
