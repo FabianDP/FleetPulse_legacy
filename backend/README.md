@@ -1,5 +1,8 @@
 # FleetPulse: ingesta, consultas y SSE
 
+El replay progresivo y los controles Angular están documentados en
+[Replay local](../docs/replay-local.md), con autorización, comandos y pruebas manuales.
+
 Desde `backend`, ejecutar `npm run typecheck` y `npm test`.
 En PowerShell con scripts deshabilitados, utilizar `npm.cmd`.
 Las pruebas compilan TypeScript y usan `node:test`, sin dependencias nuevas.
@@ -115,4 +118,5 @@ validación de consultas, parámetros SQL y cláusulas de orden, más ausencia d
 emisiones ante duplicados y rollback (incluido COMMIT fallido). No ejecutan el
 ORDER BY en PostgreSQL real ni sustituyen pruebas de integración. Quedan pendientes
 la migración verificada, concurrencia real, revalidación de los dos replays sobre
-esta versión, Angular y reproductor. No se han alterado los datos existentes.
+esta versión sobre PostgreSQL real y pruebas E2E de Angular. El reproductor local
+ya reutiliza la ingesta existente. No se han alterado los datos existentes.

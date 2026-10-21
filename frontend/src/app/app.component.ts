@@ -7,11 +7,12 @@ import { OnDestroy } from '@angular/core';
 import { Subscription } from 'rxjs';
 import { StreamService } from './core/services/stream.service';
 import { TelemetryEvent } from './core/models/telemetry-event.model';
+import { ReplayControlsComponent } from './replay-controls/replay-controls.component';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, ReplayControlsComponent],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css',
 })
