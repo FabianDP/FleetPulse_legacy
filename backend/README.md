@@ -1,5 +1,9 @@
 # FleetPulse: ingesta, consultas y SSE
 
+Para instalación limpia, variables raíz y PostgreSQL independiente seguir el
+[README principal](../README.md). `npm start` y `npm run dev` cargan el `.env`
+raíz antes de importar la aplicación; no se carga un `.env` personal en backend.
+
 El replay progresivo y los controles Angular están documentados en
 [Replay local](../docs/replay-local.md), con autorización, comandos y pruebas manuales.
 

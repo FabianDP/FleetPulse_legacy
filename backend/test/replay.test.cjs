@@ -198,6 +198,13 @@ test('HTTP replay: autorización por sesión, cookie HttpOnly y comandos simult�
   assert.match(cookie, /SameSite=Strict/i);
   assert.match(cookie, /Path=\/api\/replay/i);
   const headers = { Cookie: cookie.split(';')[0], 'Content-Type': 'application/json', Origin: 'http://localhost:4200' };
+  // An allowed Origin is not authentication; a valid session does not authorize another Origin.
+  assert.equal((await fetch(`${url}/start`, { method: 'POST', headers: {
+    'Content-Type': 'application/json', Origin: 'http://localhost:4200'
+  }, body: '{}' })).status, 401);
+  assert.equal((await fetch(`${url}/start`, { method: 'POST', headers: {
+    ...headers, Origin: 'https://external.example', 'Sec-Fetch-Site': 'cross-site'
+  }, body: '{}' })).status, 403);
   assert.equal((await fetch(url, { headers: { Cookie: 'fleetpulse_replay=fake' } })).status, 401);
   assert.equal((await fetch(url, { headers: { ...headers, Origin: 'https://external.example' } })).status, 403);
   const status = await fetch(url, { headers });

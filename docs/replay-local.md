@@ -66,26 +66,24 @@ u origen/IP no permitido: 403; demo deshabilitada o fixture inaccesible: 503.
 2. En una terminal PowerShell desde la raíz del repositorio:
 
    ```powershell
-   $env:REPLAY_ENABLED = 'true'
-   $replayPassword = Read-Host 'Elija una contraseña local distinta de API_KEY' -AsSecureString
-   $env:REPLAY_PASSWORD = [System.Net.NetworkCredential]::new('', $replayPassword).Password
-   Set-Location backend
-   npm.cmd run build
-   npm.cmd start
+   npm.cmd --prefix backend run build
+   npm.cmd --prefix backend start
    ```
 
-   Esto solo configura el entorno de esa terminal; no edita `.env`. El arranque
-   conserva la configuración de base ya existente. No mostrar contraseñas en video.
+   Primero preparar el `.env` raíz según el [README principal](../README.md).
+   `node scripts/setup-env.cjs` solo lo crea si no existe. No depende de variables
+   exportadas en la terminal; la contraseña del login es REPLAY_PASSWORD de ese
+   archivo. No mostrarla en video. Para una base nueva usar el Compose y volumen
+   independientes documentados en el README, nunca limpiar la base existente.
 
 3. En otra terminal, desde la raíz:
 
    ```powershell
-   Set-Location frontend
-   npm.cmd start -- --host localhost --port 4200
+   npm.cmd --prefix frontend start -- --host localhost --port 4200
    ```
 
 4. Abrir `http://localhost:4200`. Pulsar **Autorizar controles locales**; en el
-   diálogo nativo escribir usuario `replay` y la contraseña elegida. El backend
+   diálogo nativo escribir usuario `replay` y REPLAY_PASSWORD. El backend
    redirige al dashboard; el componente muestra Listo y 0 de 24. Usar `localhost`
    en ambos orígenes, sin mezclarlo con `127.0.0.1` para las cookies del navegador.
 5. Dejar 750 ms y pulsar **Iniciar**. Verificar avance gradual y actualizaciones
@@ -104,9 +102,9 @@ u origen/IP no permitido: 403; demo deshabilitada o fixture inaccesible: 503.
    un componente no continúa su polling; el replay del servidor continúa hasta
    pausa, finalización o apagado normal del servidor.
 
-No se incluye reset ni migración en esta iteración. Para demostrar un primer replay
-limpio hace falta una base de pruebas separada preparada previamente; no limpiar
-la base actual para seguir estos pasos.
+No se incluye reset ni migración automática. Para demostrar un primer replay limpio,
+el Compose del README prepara una base separada con su propio volumen y el esquema
+actual; no limpiar la base existente para seguir estos pasos.
 
 ## Pruebas y límites
 

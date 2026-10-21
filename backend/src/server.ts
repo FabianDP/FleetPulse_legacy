@@ -1,4 +1,4 @@
-import "dotenv/config";
+import "./config/load-environment";
 import { app } from "./app";
 import { pool } from "./config/database";
 import { streamService } from "./services/stream.service";
