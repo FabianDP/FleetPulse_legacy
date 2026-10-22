@@ -282,15 +282,23 @@ correctos. Las comprobaciones locales de esa iteración usaron Node 24; el workf
 selecciona 22. La prueba Node 22 de instalación está en la iteración 4.
 
 **Decisión humana y ejecución remota.** El desarrollador solicitó CI y el historial
-registra su incorporación. En esta solicitud informa que GitHub Actions ejecutó
-correctamente backend y frontend en `dev`: **resultado reportado por el desarrollador,
-pendiente de evidencia remota adjunta**. No se pudo consultar directamente la página
-de Actions y no hay una captura localizada. Tener `ci.yml` y tests locales verdes
-no verifica por sí solo el resultado remoto.
+registra su incorporación. Como evidencia posterior, el desarrollador aporta los
+siguientes datos verificados de GitHub Actions:
 
-**Para cerrar la evidencia:** añadir URL de la ejecución, SHA ejecutado, rama dev,
-fecha real y captura donde ambos jobs aparezcan satisfactorios. No se inventa un
-número de run ni se presupone que sea exactamente el SHA del último commit.
+- Rama: `dev`.
+- Commit ejecutado: `facdf3c4ad13602f1047c39ba35cef7c7b368c6d`.
+- Ejecución: [39715958010](https://github.com/FabianDP/FleetPulse_legacy/actions/runs/39715958010).
+- Resultado general: **success**.
+
+| Job | Resultado |
+|---|---|
+| Backend - typecheck, tests and build | **success** |
+| Frontend - production build | **success** |
+
+La fuente de esta actualización es la evidencia verificada aportada por el
+desarrollador. No se afirma una consulta independiente de los logs remotos ni
+se inventa una captura, fecha de ejecución o conteo de pruebas del run. Los
+resultados locales históricos anteriores se conservan con su alcance original.
 
 ## Decisiones técnicas tomadas por el desarrollador
 
@@ -335,7 +343,7 @@ E-001-02. E-004-03 a 80 no alerta; E-005-03 a 81 sí.
 | Prueba aislada PostgreSQL | Persistencia, dos replays, orden de historial y estados con el motor real | Entrega durable SSE, varias instancias o carga de producción |
 | Builds Angular | Compilación de aplicación y plantillas | Que se ejecutaron los tests del navegador |
 | review-02/review-03 | Aprobaciones y comprobaciones manuales registradas | Existencia de capturas o logs no adjuntos |
-| CI versionado | Definición reproducible de validaciones | Resultado de un run remoto sin enlace/captura |
+| CI versionado y ejecución 39715958010 en dev | Workflow y resultado success de ambos jobs, según la evidencia verificada aportada y enlazada | Pruebas PostgreSQL reales o E2E de navegador que el workflow no ejecuta |
 
 La suite normal está en [backend/test](../backend/test). No se afirma que los
 tests Angular estén aprobados: `app.component.spec.ts` conserva expectativas del
@@ -425,15 +433,18 @@ inventar logs, fechas ni capturas. No se incluyen credenciales ni contenido del 
 
 - [x] Corregir la diferencia entre replay integrado y transporte HTTP
   de la demo; validado mediante pruebas automatizadas y comprobación manual.
-- [ ] Adjuntar URL/captura del run de Actions en dev, SHA y estado de ambos jobs.
+- [x] Incorporar evidencia de GitHub Actions en dev: ejecución 39715958010,
+  SHA facdf3c4ad13602f1047c39ba35cef7c7b368c6d y ambos jobs con resultado success.
 - [ ] Adjuntar video/capturas de los dos replays, pausa/reanudación y dashboard;
   confirmar que no muestran configuración sensible.
 - [ ] Confirmar el relato del incidente de dos copias y adjuntar log redactado,
   fecha y solución aplicada, sin contraseñas ni identificadores sensibles.
 - [ ] Si se publicitan backup/migración como evidencia ejecutable, añadir un
   registro seguro o referencia a la comprobación humana de review-02.
-- [ ] Aprobar la diferencia entre replay integrado y transporte HTTP de la demo,
-  y reconocer los pendientes de tests Angular y rollback no ensayado.
+- [ ] Revisar los pendientes de tests Angular y aprobar la estrategia de rollback
+  no ensayado. La sustitución del transporte directo por HTTP ya fue aprobada
+  expresamente y está documentada en la corrección posterior; no queda pendiente
+  aprobar aquella diferencia histórica.
 
 Hasta completar esos puntos, este documento distingue evidencia técnica comprobada,
 registros de revisión y afirmaciones pendientes de soporte publicable.
