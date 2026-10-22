@@ -1,5 +1,11 @@
 # Verificación de instalación — 21 de octubre de 2026
 
+Este registro corresponde al replay original con llamada directa al servicio de
+ingesta. La corrección HTTP posterior se documenta en
+[evidencias de desarrollo](ai-development-evidence.md#corrección-posterior-a-la-revisión-humana-transporte-http-del-replay).
+Sus pruebas nuevas usan HTTP real y persistencia simulada: los resultados reales
+de PostgreSQL que siguen no se atribuyen al adaptador HTTP nuevo.
+
 ## Entornos utilizados
 
 - Windows: Node 24.21.0, npm 11.19.0, Docker Engine 29.9.1, Compose 5.6.0.

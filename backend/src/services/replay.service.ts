@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
-import { ingestBatch } from "./event.service";
+import type { ingestBatch } from "./event.service";
+import { postReplayBatch, ReplayTransportError } from "./replay-http-client";
 
 type BatchResult = Awaited<ReturnType<typeof ingestBatch>>;
 export type ReplayState = "idle" | "running" | "paused" | "completed" | "error";
@@ -33,7 +34,7 @@ export class ReplayService {
 
   constructor(
     private readonly load: () => Promise<unknown[]> = loadReplayFixture,
-    private readonly ingest: (events: unknown[]) => Promise<BatchResult> = ingestBatch
+    private readonly ingest: (events: unknown[]) => Promise<BatchResult> = postReplayBatch
   ) {}
 
   private emptyProgress(): ReplayProgress {
@@ -93,9 +94,10 @@ export class ReplayService {
           this.progress.processed++;
           if (this.progress.processed === this.progress.total) this.progress.state = "completed";
           else this.schedule();
-        } catch {
+        } catch (error) {
           this.progress.state = "error";
-          this.progress.errors.push({ index, reason: "INGESTION_FAILED" });
+          this.progress.errors.push({ index, reason: error instanceof ReplayTransportError
+            ? error.code : "INGESTION_FAILED" });
         }
       });
     }, this.progress.intervalMs);

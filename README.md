@@ -119,9 +119,10 @@ Cada control exige sesión aleatoria HttpOnly, SameSite=Strict, limitada a
 `/api/replay`. Loopback y Origin permitido son defensas adicionales, no sustituyen
 la autenticación. Otro sitio no recibe la cookie y otro Origin es rechazado incluso
 con cookie válida. No introducir API_KEY en Angular ni publicar por túneles/proxies.
-El replay integrado reutiliza `ingestBatch` dentro del backend; la diferencia
-frente al reproductor HTTP de los requisitos se documenta en
-[replay local](docs/replay-local.md).
+El replay envía un evento por paso mediante `POST /api/events/batch` en loopback,
+con X-API-Key leída exclusivamente del entorno backend. Usa el mismo PORT del
+servidor y un timeout de 10 segundos, sin redirecciones ni reintentos automáticos.
+No se configura una URL externa. Ver [replay local](docs/replay-local.md).
 
 ## Verificaciones
 

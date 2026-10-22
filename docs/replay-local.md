@@ -2,12 +2,20 @@
 
 ## Integración y decisiones
 
-`ReplayService` lee el fixture desde una ruta fija relativa al módulo, conserva
-el orden de líneas y llama a `ingestBatch([evento])`. No hay un segundo validador
-de telemetría ni SQL de replay. La autenticación HTTP de la ingesta sigue intacta.
-Por la integración dentro del backend solicitada en esta iteración, el motor no
-hace una petición HTTP a sí mismo: usa directamente el servicio existente.
-La `API_KEY` del productor permanece en el servidor y no se entrega al navegador.
+`ReplayService` lee el fixture desde una ruta fija relativa al módulo y conserva
+el orden de líneas. Su adaptador backend usa fetch nativo de Node 22 para enviar
+`{"events":[evento]}` a `http://127.0.0.1:<PORT>/api/events/batch`, donde PORT es el
+del servidor (3000 por defecto). Adjunta X-API-Key desde `process.env.API_KEY`.
+El endpoint existente autentica y llama a `ingestBatch`: no hay un segundo
+validador de telemetría ni SQL de replay. La clave no se envía a Angular, respuestas
+de control o logs. No se necesita una variable de URL ni dependencia nueva.
+
+El destino es fijo en loopback y las redirecciones se rechazan. El timeout de
+10 segundos cubre petición y lectura de respuesta; no hay reintentos automáticos.
+Solo una respuesta HTTP 200 con estructura y contadores coherentes actualiza el
+progreso. Se valida el formato de respuesta, no se replican reglas de telemetría.
+Los motivos de dominio permitidos se reconocen explícitamente; si el endpoint
+incorpora nuevos motivos, debe actualizarse ese contrato de respuesta del adaptador.
 
 El control utiliza una contraseña independiente `REPLAY_PASSWORD`, habilitación
 explícita `REPLAY_ENABLED=true`, acceso loopback y una sesión aleatoria HttpOnly.
@@ -31,8 +39,21 @@ Reiniciar pone índices, contadores y errores a cero y deja el motor en `idle`;
 hay que pulsar Iniciar. Nunca borra PostgreSQL. Reiniciar el proceso Node pierde
 el progreso y las sesiones, pero no datos. Un rechazo de validación cuenta y
 continúa. Un fallo técnico deja `error`, mantiene el índice para reintento y
-registra únicamente `INGESTION_FAILED`. Reanudar reintenta ese evento; si hubo un
-commit de resultado incierto, la idempotencia existente protege la repetición.
+registra un código seguro: `REPLAY_HTTP_CONFIG_ERROR`, `REPLAY_HTTP_AUTH_ERROR`,
+`REPLAY_HTTP_ERROR`, `REPLAY_HTTP_TIMEOUT`, `REPLAY_HTTP_UNAVAILABLE` o
+`REPLAY_HTTP_INVALID_RESPONSE`. Otros fallos internos conservan `INGESTION_FAILED`.
+No se propagan excepciones, cabeceras ni cuerpos de error arbitrarios del servidor.
+Los rechazos y conflictos recibidos dentro de una respuesta válida 200 sí cuentan
+como rechazados y permiten continuar con el siguiente evento.
+
+Reanudar después de un error vuelve a intentar explícitamente el mismo índice.
+Un timeout o aborto HTTP no garantiza rollback: PostgreSQL podría haber confirmado
+antes de perderse la respuesta y SSE ya podría haberse emitido. La idempotencia
+protege la repetición, pero ese reintento puede contarse como duplicado y cambiar
+los contadores observados respecto de un recorrido sin fallos de transporte.
+Pausa y apagado normal esperan el paso en curso; el cierre mantiene el orden de
+detener replay antes de cerrar el listener y el pool. El timeout limita la espera
+del cliente HTTP, no garantiza que una consulta SQL bloqueada finalice.
 
 Las actualizaciones del dashboard siguen llegando por el SSE existente, después
 de COMMIT. El componente consulta el progreso cada 750 ms, sin cambiar la tabla,
@@ -114,12 +135,19 @@ Desde `frontend`: `npm.cmd run build`.
 Los tests nuevos usan `node:test`, reloj simulado y dobles de persistencia:
 orden, pausas, reanudación, reinicio, doble inicio, evento en vuelo, fallos,
 autorización HTTP, expiración y dos replays del fixture con la ingesta existente.
+Se conservan esas pruebas y se añade `backend/test/replay-http.test.cjs`: fetch
+real, endpoint Express protegido, clave sintética, fixture completo en orden,
+dos recorridos, pausa/reanudación/reinicio, timeout durante lectura, autenticación,
+redirecciones, respuestas inválidas, conexión fallida y rollback simulado.
 La regresión de los dos replays espera 20/2/2 y 0/22/2 y ninguna emisión nueva
 en la segunda ejecución. El repositorio simulado no acredita SQL ni concurrencia
 en PostgreSQL. Las pruebas SSE preexistentes mantienen cobertura con conexiones
 HTTP reales y rollback simulado. Ninguna de estas pruebas escribe en PostgreSQL.
 
-Pendientes: verificar manualmente autorización y controles en un navegador y los
-dos replays sobre una base de pruebas real. El build Angular verifica plantillas
+La versión previa a la corrección de transporte sí tiene un ensayo PostgreSQL
+real registrado en `delivery-verification.md`; no acredita el adaptador nuevo.
+Para esta corrección no se ha ejecutado PostgreSQL real ni se ha creado una base.
+Pendientes: verificar manualmente autorización y controles en un navegador y
+repetir ambos replays HTTP en una base independiente autorizada. El build Angular verifica plantillas
 y tipos, pero no es una prueba E2E. Replay y SSE son de una sola instancia; para
 múltiples procesos harían falta coordinación compartida y notificaciones durables.
