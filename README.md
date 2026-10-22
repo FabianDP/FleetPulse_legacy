@@ -21,9 +21,6 @@ docker compose version
 node scripts/setup-env.cjs
 npm.cmd --prefix backend ci
 npm.cmd --prefix frontend ci
-docker compose -f compose.yaml --env-file .env up -d --wait --wait-timeout 90
-npm.cmd --prefix backend run build
-npm.cmd --prefix backend start
 ```
 
 El generador crea `.env` con tres credenciales locales independientes, sin
@@ -33,21 +30,15 @@ solo si no existe `.env` y completar DB_PASSWORD, API_KEY y REPLAY_PASSWORD con
 valores locales distintos y no vacíos. No usar configuración personal ni secretos
 de producción. `.env` permanece excluido de Git.
 
-En otra terminal desde la raíz:
+Continuar con [Base limpia de demostración](#base-limpia-de-demostración-sin-borrar-datos),
+el único procedimiento de arranque de PostgreSQL y backend. Después, en otra terminal:
 
 ```powershell
 npm.cmd --prefix frontend start -- --host localhost --port 4200
 ```
 
-En una tercera terminal:
-
-```powershell
-Invoke-RestMethod http://localhost:3000/api/health
-docker compose -f compose.yaml --env-file .env ps
-```
-
-Esperar `status: ok`, `database: connected` y Docker `healthy`.
-Abrir **http://localhost:4200**. Para desarrollo, sustituir el arranque backend
+Abrir **http://localhost:4200** después de verificar health según ese procedimiento.
+Para desarrollo, sustituir el arranque backend
 por `npm.cmd --prefix backend run dev`; no ejecutar start y dev simultáneamente.
 Desde `backend`, `npm start` y `npm run dev` cargan el mismo archivo raíz.
 
@@ -75,8 +66,8 @@ nueva sin DB_*, API_KEY, PORT o REPLAY_* heredadas para reproducir la demo.
 
 `DATABASE_URL` no se consume. No mostrar `.env` en logs, capturas ni video.
 
-Utilizar siempre **`-f compose.yaml`**: proyecto `fleetpulse-demo`, servicio `db`,
-volumen `fleetpulse-demo_demo_pgdata`. No reutiliza el contenedor
+Utilizar siempre **`-f compose.yaml -p $demoProject`**: el proyecto dinámico del
+procedimiento siguiente utiliza el servicio `db` y su propio volumen. No reutiliza el contenedor
 `fleetpulse-postgres` ni su volumen. `docker-compose.yml` se conserva como archivo
 histórico; no combinar ambos Compose. PostgreSQL se publica solo en localhost.
 
@@ -86,17 +77,45 @@ solo lectura como `001-schema.sql`. Orden revisado: eventos, estado, alertas,
 antiguas VARCHAR(100), no se aplica sobre la instalación nueva. Cambiar `.env`
 no cambia usuarios persistidos ni vuelve a ejecutar la inicialización SQL.
 
-Para otra base nueva, conservar los datos y usar un proyecto diferente:
+### Base limpia de demostración sin borrar datos
+
+Desde la raíz, con Docker Desktop iniciado y el `.env` ya preparado, abrir una
+terminal PowerShell nueva. Conservar ese archivo: Compose y backend deben usar
+las mismas credenciales. No generar otro entorno para conectarse a una base previa.
+Si hay un backend en el puerto 3000, detenerlo normalmente con Ctrl+C antes de
+continuar; no detener ni modificar su PostgreSQL.
+
+Elegir un proyecto nuevo en cada demostración y un puerto libre. Los valores de
+DB_HOST/DB_PORT de esta terminal prevalecen sobre `.env` tanto en Compose como
+en el backend; no se modifica ningún archivo de configuración:
 
 ```powershell
-docker compose -f compose.yaml --env-file .env -p fleetpulse-demo-segunda up -d --wait --wait-timeout 90
+$demoProject = 'fleetpulse-demo-' + [guid]::NewGuid().ToString('N')
+$env:DB_HOST = '127.0.0.1'
+$env:DB_PORT = '55434'
+if (Get-NetTCPConnection -State Listen -LocalPort ([int]$env:DB_PORT) -ErrorAction SilentlyContinue) {
+    throw 'Puerto ocupado: elija otro DB_PORT libre antes de continuar.'
+}
+docker compose -f compose.yaml --env-file .env -p $demoProject up -d --wait --wait-timeout 90
+if ($LASTEXITCODE -ne 0) { throw 'PostgreSQL no esta listo; no iniciar el backend.' }
+docker compose -f compose.yaml --env-file .env -p $demoProject ps
+npm.cmd --prefix backend run build
+if ($LASTEXITCODE -ne 0) { throw 'Fallo el build; no iniciar el backend.' }
+npm.cmd --prefix backend start
 ```
 
-Si el proyecto anterior sigue usando ese puerto, detener **solo ese proyecto**
-con `docker compose -f compose.yaml --env-file .env stop db`, o usar otro DB_PORT
-en el `.env` de otra copia y reiniciar su backend. El nuevo proyecto crea otro
-volumen; no hace falta eliminar datos, contenedores ni volúmenes. No hay endpoint
-de borrado. **Reiniciar en la UI no limpia PostgreSQL**.
+Cada proyecto crea un contenedor independiente y el volumen
+`${demoProject}_demo_pgdata`. Guardar el nombre del proyecto para identificar la demo.
+El volumen vacío recibe automáticamente el esquema actual; no ejecutar migraciones
+adicionales. `--wait` comprueba el healthcheck de PostgreSQL: `ps` debe indicar
+`healthy`. Mantener el backend en **esa misma terminal**, para que use el nuevo
+puerto y no la base anterior. Los recursos anteriores permanecen intactos.
+
+En otras terminales, iniciar Angular con el comando de instalación anterior y
+ejecutar `Invoke-RestMethod http://localhost:3000/api/health`: esperar `status: ok`
+y `database: connected` antes de seguir con [Autorizar y demostrar el replay](#autorizar-y-demostrar-el-replay).
+Para otra base limpia, repetir este único procedimiento con otro proyecto nuevo
+y otro puerto libre. No se borran datos, contenedores ni volúmenes; no hay endpoint de borrado.
 
 ## Autorizar y demostrar el replay
 
