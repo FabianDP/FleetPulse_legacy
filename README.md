@@ -180,6 +180,32 @@ Invoke-RestMethod 'http://localhost:3000/api/alerts'
 Esperar el vehículo coincidente, su historial ordenado y las alertas históricas.
 Más detalles: [guía del replay](docs/replay-local.md).
 
+### Limpieza segura de datos de demostración
+
+FleetPulse utiliza proyectos Docker Compose aislados para las demostraciones. Cada proyecto tiene su propio contenedor y volumen PostgreSQL.
+
+Para iniciar una demostración desde cero, se recomienda crear un nuevo proyecto de prueba con un nombre único, siguiendo el procedimiento de instalación de este README.
+
+Si es necesario eliminar los datos de una demostración anterior, primero se debe detener el backend conectado a esa base y verificar el nombre exacto del proyecto Docker Compose utilizado.
+
+Desde la raíz del repositorio:
+
+```powershell
+docker compose -f compose.yaml --env-file .env -p $demoProject ps
+```
+
+Una vez confirmado que `$demoProject` corresponde exclusivamente a la demostración que se desea eliminar:
+
+```powershell
+docker compose -f compose.yaml --env-file .env -p $demoProject down --volumes
+```
+
+**Advertencia:** este último comando elimina permanentemente el volumen y los datos PostgreSQL asociados a ese proyecto. No debe ejecutarse sobre proyectos compartidos ni bases con información que deba conservarse.
+
+Para repetir la primera reproducción con datos limpios, crear un nuevo proyecto aislado siguiendo la sección de instalación y arranque.
+
+El botón **Reiniciar** del reproductor únicamente restablece su progreso y contadores; no elimina eventos, vehículos ni alertas persistidos.
+
 ## Pruebas y compilación — terminal 3
 
 Desde la raíz del clon:
@@ -280,6 +306,60 @@ La recuperación por GET restaura el dashboard, pero no reproduce todos los avis
 perdidos. Siguen pendientes concurrencia real exhaustiva, paginación, E2E
 automatizado completo y ensayo de rollback. Angular 19 se conserva por el alcance
 del reto; revisar toolchain y dependencias antes de ampliar el despliegue.
+
+## Arquitectura de la solución
+
+FleetPulse utiliza una arquitectura Full Stack con separación de responsabilidades entre frontend, API, servicios de negocio y persistencia.
+
+**Frontend — Angular 19**
+
+- Dashboard para visualizar vehículos, estados, historial GPS y alertas.
+- Búsqueda de vehículos con actualización de resultados.
+- Comunicación HTTP con el backend y suscripción a Server-Sent Events (SSE).
+- Controles para iniciar, pausar, reanudar y reiniciar la reproducción.
+
+**Backend — Node.js y TypeScript**
+
+- API REST organizada en rutas, servicios y repositorios.
+- Validación individual de eventos GPS.
+- Control de idempotencia mediante identificadores únicos.
+- Procesamiento de eventos fuera de orden cronológico.
+- Generación de alertas cuando la velocidad supera los 80 km/h.
+- Publicación de eventos SSE después de confirmar las transacciones.
+
+**Persistencia — PostgreSQL**
+
+- Almacenamiento de eventos GPS, últimos estados y alertas.
+- Transacciones para garantizar integridad.
+- Restricciones de unicidad e índices para consultas.
+- Base de demostración aislada mediante Docker Compose.
+
+**Flujo de procesamiento**
+
+1. El reproductor lee los 24 eventos sintéticos.
+2. Envía cada evento mediante HTTP a `POST /api/events/batch`.
+3. El backend autentica, valida y procesa el evento.
+4. PostgreSQL persiste los datos aceptados.
+5. El backend publica las actualizaciones mediante SSE.
+6. Angular actualiza el dashboard sin recargar la página.
+
+**Decisiones arquitectónicas**
+
+Se eligió SSE por tratarse de una comunicación principalmente unidireccional del servidor hacia el dashboard. PostgreSQL garantiza persistencia e integridad, mientras que la separación entre rutas, servicios y repositorios facilita el mantenimiento y las pruebas.
+
+La solución está diseñada para una demostración local de una sola instancia. Sus limitaciones y posibles mejoras se encuentran documentadas en `docs/RETROSPECTIVA.md`.
+
+## Tiempo invertido y uso de inteligencia artificial
+
+**Tiempo efectivo aproximado:** 28,5 horas acumuladas entre el 20 y el 22 de octubre de 2026, hasta el momento de este registro. Se excluyen descansos y pausas personales. El tiempo podrá actualizarse al finalizar la entrega.
+
+El trabajo comprendió análisis del código legacy, diseño de la solución, desarrollo backend y frontend, integración con PostgreSQL, implementación del reproductor GPS, pruebas, corrección de errores, configuración de CI y documentación.
+
+**Herramienta de IA agéntica utilizada:** OpenAI Codex.
+
+Codex se utilizó como apoyo durante el análisis, desarrollo, revisión y documentación del proyecto. Las propuestas y modificaciones se contrastaron con los requisitos de Detektor y se verificaron mediante revisión del código, pruebas automatizadas y comprobaciones funcionales.
+
+El uso de IA no sustituyó las decisiones técnicas ni la responsabilidad sobre la solución. Las iteraciones, correcciones y decisiones documentadas se encuentran en `docs/AI-WORKFLOW.md`.
 
 ## Documentación y evidencias
 
