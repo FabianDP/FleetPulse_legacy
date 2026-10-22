@@ -103,9 +103,10 @@ npm.cmd --prefix backend run build
 if ($LASTEXITCODE -ne 0) { throw 'Fallo el build; no iniciar el backend.' }
 npm.cmd --prefix backend start
 ```
+El puerto 55434 es un ejemplo. Si está ocupado, seleccionar otro puerto libre y actualizar $env:DB_PORT antes de ejecutar Docker Compose.
 
 Cada proyecto crea un contenedor independiente y el volumen
-`${demoProject}_demo_pgdata`. Guardar el nombre del proyecto para identificar la demo.
+`${demoProject}_demo_pgdata`. Cada proyecto crea un volumen PostgreSQL independiente. Guardar el nombre de $demoProject para identificar los recursos de esa demostración..
 El volumen vacío recibe automáticamente el esquema actual; no ejecutar migraciones
 adicionales. `--wait` comprueba el healthcheck de PostgreSQL: `ps` debe indicar
 `healthy`. Mantener el backend en **esa misma terminal**, para que use el nuevo
