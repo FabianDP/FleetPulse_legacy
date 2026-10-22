@@ -149,6 +149,8 @@ variables y comprobación de puertos anterior es específico de PowerShell.
 | Vehículos | 8 | 8 |
 | Alertas | 4 | 4 |
 
+En el segundo replay se obtienen 22 duplicados, 0 eventos aceptados y 2 rechazados, demostrando la idempotencia del sistema.
+
 **Reiniciar restablece índice y contadores, nunca borra PostgreSQL.** Si la base
 ya contenía el fixture completo, el primer recorrido observado dará los números
 del segundo. Dos pestañas comparten un único motor. Se respeta el orden original
