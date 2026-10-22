@@ -30,8 +30,8 @@ solo si no existe `.env` y completar DB_PASSWORD, API_KEY y REPLAY_PASSWORD con
 valores locales distintos y no vacíos. No usar configuración personal ni secretos
 de producción. `.env` permanece excluido de Git.
 
-Continuar con [Base limpia de demostración](#base-limpia-de-demostración-sin-borrar-datos),
-el único procedimiento de arranque de PostgreSQL y backend. Después, en otra terminal:
+Continuar con la sección "Base limpia de demostración sin borrar datos",
+el único procedimiento de arranque de PostgreSQL y backend.
 
 ```powershell
 npm.cmd --prefix frontend start -- --host localhost --port 4200
