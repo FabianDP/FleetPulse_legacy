@@ -1,93 +1,67 @@
 # FleetPulse
 
-Telemetría GPS: Node.js/TypeScript, PostgreSQL, Angular 19, SSE y replay local.
+FleetPulse es un sistema de monitoreo GPS desarrollado para la prueba técnica de
+Detektor. Moderniza una ingesta legacy con Node.js/TypeScript, PostgreSQL y Angular
+19: valida eventos, evita duplicados, conserva el historial cronológico y genera
+alertas por exceso de velocidad. El dashboard incluye búsqueda, historial del
+vehículo seleccionado, actualizaciones SSE y recuperación tras reconexión.
+Un replay HTTP permite demostrar el flujo con 24 eventos sintéticos.
 
-## Requisitos
+## Instalación y arranque — Windows PowerShell
 
-Git, Docker Desktop iniciado con contenedores Linux, Compose v2.20+, Node.js
-**22.x** y npm **10+**. `.nvmrc` selecciona Node 22, compatible con Angular 19.2
-según su [tabla oficial](https://angular.dev/reference/versions). No instalar CLI
-Angular global: los lockfiles incluyen las herramientas de cada proyecto.
-Puertos locales: 3000, 4200 y 5434 (PostgreSQL, configurable).
+Ejecutar los comandos desde la raíz del repositorio, salvo el paso de clonación.
+Se utilizan tres terminales:
 
-## Instalación desde cero — PowerShell
+| Terminal | Uso |
+|---|---|
+| PowerShell 1 | Preparación, PostgreSQL aislado y backend; mantenerla abierta. |
+| PowerShell 2 | Servidor Angular; mantenerla abierta. |
+| PowerShell 3 | Health, consultas y pruebas. |
 
-Clonar la URL del repositorio entregado y situarse en su raíz. Ejecutar:
+### 1. Comprobar requisitos — terminal 1
+
+Instalar Git, Docker Desktop con contenedores Linux, Docker Compose **v2.20+**,
+Node.js **22.x** y npm **10+**. Iniciar Docker Desktop antes de continuar.
+`.nvmrc` selecciona Node 22; con nvm compatible puede usarse `nvm use`.
+No hace falta instalar Angular CLI globalmente.
 
 ```powershell
+git --version
 node --version
 npm.cmd --version
 docker compose version
+```
+
+**Resultado esperado:** comandos disponibles y versiones compatibles. Reservar
+3000 para backend, 4200 para Angular y un puerto PostgreSQL libre; el ejemplo
+utiliza 55434. No se necesitan variables personales exportadas en la terminal.
+
+### 2. Clonar e instalar — terminal 1
+
+```powershell
+git clone https://github.com/FabianDP/FleetPulse_legacy.git
+cd FleetPulse_legacy
 node scripts/setup-env.cjs
 npm.cmd --prefix backend ci
 npm.cmd --prefix frontend ci
 ```
 
-El generador crea `.env` con tres credenciales locales independientes, sin
-imprimirlas. Si ya existe `.env`, falla sin leerlo ni sobrescribirlo: revisarlo
-manualmente o usar otro clon para la demo. Alternativa manual: copiar `.env.example`
-solo si no existe `.env` y completar DB_PASSWORD, API_KEY y REPLAY_PASSWORD con
-valores locales distintos y no vacíos. No usar configuración personal ni secretos
-de producción. `.env` permanece excluido de Git.
+**Resultado esperado:** dependencias instaladas desde los lockfiles y un `.env`
+raíz con tres credenciales locales independientes, sin imprimir sus valores.
+Si `.env` ya existe, el generador falla sin leerlo ni sobrescribirlo: revisarlo
+localmente o usar otro clon para la demostración. No continuar con credenciales
+que correspondan a otra instancia PostgreSQL.
 
-Continuar con la sección "Base limpia de demostración sin borrar datos",
-el único procedimiento de arranque de PostgreSQL y backend.
+Alternativa manual: copiar `.env.example` solo si no existe `.env` y completar
+DB_PASSWORD, API_KEY y REPLAY_PASSWORD con valores locales distintos y no vacíos.
+No usar secretos de producción ni mostrar el archivo en capturas, logs o video.
 
-```powershell
-npm.cmd --prefix frontend start -- --host localhost --port 4200
-```
+### 3. Preparar una base limpia y arrancar backend — terminal 1
 
-Abrir **http://localhost:4200** después de verificar health según ese procedimiento.
-Para desarrollo, sustituir el arranque backend
-por `npm.cmd --prefix backend run dev`; no ejecutar start y dev simultáneamente.
-Desde `backend`, `npm start` y `npm run dev` cargan el mismo archivo raíz.
-
-En bash/zsh los comandos son iguales cambiando `npm.cmd` por `npm`; para health:
-`curl --fail http://localhost:3000/api/health`. Con nvm, ejecutar `nvm use` antes
-de instalar. No se necesitan variables previamente exportadas en la terminal.
-
-## Entorno y PostgreSQL independiente
-
-El backend carga el `.env` **de la raíz**, antes del pool, desde `src` o `dist`,
-sin depender del directorio de ejecución. No carga un `.env` dentro de backend.
-Variables exportadas explícitamente mantienen precedencia: usar una terminal
-nueva sin DB_*, API_KEY, PORT o REPLAY_* heredadas para reproducir la demo.
-
-| Variable | Uso |
-|---|---|
-| DB_HOST | `127.0.0.1`; Node corre fuera de Docker |
-| DB_PORT | `5434`; cambiarlo si está ocupado |
-| DB_USER / DB_NAME | `fleetpulse_demo`, iguales para Compose y backend |
-| DB_PASSWORD | Contraseña local generada, obligatoria en Compose |
-| PORT | `3000`; Angular y el login usan este puerto |
-| API_KEY | Protege POST /api/events/batch; nunca va a Angular |
-| REPLAY_ENABLED | `true` habilita la demo; `false` bloquea controles |
-| REPLAY_PASSWORD | Contraseña independiente del login de replay |
-
-`DATABASE_URL` no se consume. No mostrar `.env` en logs, capturas ni video.
-
-Utilizar siempre **`-f compose.yaml -p $demoProject`**: el proyecto dinámico del
-procedimiento siguiente utiliza el servicio `db` y su propio volumen. No reutiliza el contenedor
-`fleetpulse-postgres` ni su volumen. `docker-compose.yml` se conserva como archivo
-histórico; no combinar ambos Compose. PostgreSQL se publica solo en localhost.
-
-En volumen vacío se ejecuta **solo** `backend/database/schema.sql`, montado de
-solo lectura como `001-schema.sql`. Orden revisado: eventos, estado, alertas,
-índices. Ya usa IDs TEXT. La migración `002-identifiers-text.sql` es para bases
-antiguas VARCHAR(100), no se aplica sobre la instalación nueva. Cambiar `.env`
-no cambia usuarios persistidos ni vuelve a ejecutar la inicialización SQL.
-
-### Base limpia de demostración sin borrar datos
-
-Desde la raíz, con Docker Desktop iniciado y el `.env` ya preparado, abrir una
-terminal PowerShell nueva. Conservar ese archivo: Compose y backend deben usar
-las mismas credenciales. No generar otro entorno para conectarse a una base previa.
-Si hay un backend en el puerto 3000, detenerlo normalmente con Ctrl+C antes de
-continuar; no detener ni modificar su PostgreSQL.
-
-Elegir un proyecto nuevo en cada demostración y un puerto libre. Los valores de
-DB_HOST/DB_PORT de esta terminal prevalecen sobre `.env` tanto en Compose como
-en el backend; no se modifica ningún archivo de configuración:
+Este es el procedimiento único para crear una base de demostración **sin borrar
+bases anteriores**. Usar una terminal sin DB_*, API_KEY, PORT o REPLAY_* heredadas;
+si se abre otra terminal, volver a la raíz del clon. Conservar el `.env` preparado.
+Si otro backend ocupa 3000, detenerlo normalmente con Ctrl+C sin tocar su base.
 
 ```powershell
 $demoProject = 'fleetpulse-demo-' + [guid]::NewGuid().ToString('N')
@@ -103,74 +77,217 @@ npm.cmd --prefix backend run build
 if ($LASTEXITCODE -ne 0) { throw 'Fallo el build; no iniciar el backend.' }
 npm.cmd --prefix backend start
 ```
-El puerto 55434 es un ejemplo. Si está ocupado, seleccionar otro puerto libre y actualizar $env:DB_PORT antes de ejecutar Docker Compose.
 
-Cada proyecto crea un contenedor independiente y el volumen
-`${demoProject}_demo_pgdata`. Cada proyecto crea un volumen PostgreSQL independiente. Guardar el nombre de $demoProject para identificar los recursos de esa demostración..
-El volumen vacío recibe automáticamente el esquema actual; no ejecutar migraciones
-adicionales. `--wait` comprueba el healthcheck de PostgreSQL: `ps` debe indicar
-`healthy`. Mantener el backend en **esa misma terminal**, para que use el nuevo
-puerto y no la base anterior. Los recursos anteriores permanecen intactos.
+**Resultado esperado:** `ps` indica `healthy`, el build termina correctamente y el
+backend queda escuchando en 3000. El healthcheck espera a PostgreSQL antes del arranque.
+Si 55434 está ocupado, elegir otro puerto y actualizar `$env:DB_PORT` antes de Compose.
 
-En otras terminales, iniciar Angular con el comando de instalación anterior y
-ejecutar `Invoke-RestMethod http://localhost:3000/api/health`: esperar `status: ok`
-y `database: connected` antes de seguir con [Autorizar y demostrar el replay](#autorizar-y-demostrar-el-replay).
-Para otra base limpia, repetir este único procedimiento con otro proyecto nuevo
-y otro puerto libre. No se borran datos, contenedores ni volúmenes; no hay endpoint de borrado.
+Mantener backend en **esta misma terminal**: DB_HOST/DB_PORT prevalecen sobre `.env`
+tanto para Compose como para Node. Cada `$demoProject` crea su contenedor y volumen
+`${demoProject}_demo_pgdata`; guardar ese nombre para identificar sus recursos.
+No reutiliza `fleetpulse-postgres` ni su volumen. Utilizar siempre
+`-f compose.yaml -p $demoProject`, sin combinar el histórico `docker-compose.yml`.
 
-## Autorizar y demostrar el replay
+El volumen vacío inicializa únicamente `backend/database/schema.sql`: eventos,
+estado, alertas e índices, con identificadores TEXT. No aplicar además la migración
+`002-identifiers-text.sql`, destinada a bases antiguas VARCHAR(100). Para otra base
+limpia, repetir el procedimiento con otro proyecto y puerto libre. No borrar datos,
+contenedores o volúmenes; no hay endpoint de borrado.
 
-1. Pulsar **Autorizar controles locales** en http://localhost:4200.
-2. Usar usuario `replay` y REPLAY_PASSWORD del `.env` generado. Consultarla
-   localmente en el editor, sin compartirla ni grabarla.
-3. Dejar 750 ms y pulsar **Iniciar**. Pausar espera el evento en curso;
-   Reanudar continúa desde ese índice. El dashboard recibe cambios por SSE.
-4. Base nueva: **24 procesados, 20 aceptados, 2 duplicados, 2 rechazados**,
-   8 vehículos y 4 alertas.
-5. **Reiniciar**, luego **Iniciar**, sin limpiar: **0 aceptados, 22 duplicados,
-   2 rechazados**. Persisten 20 eventos y 4 alertas; no se emiten SSE por duplicados.
+Para desarrollo puede sustituirse el último comando por
+`npm.cmd --prefix backend run dev`. No ejecutar start y dev simultáneamente.
+Ambos cargan el mismo `.env` raíz, también si se ejecutan desde `backend`.
 
-Reiniciar restablece índice y contadores, nunca datos. Si la base ya contenía el
-fixture completo, el primer recorrido observado tendrá los resultados del segundo.
-El evento tardío alerta sin reemplazar estado reciente; 80 no alerta y 81 sí.
-Dos pestañas comparten un motor. Se conserva el orden de las 24 líneas.
+### 4. Verificar backend — terminal 3
 
-Cada control exige sesión aleatoria HttpOnly, SameSite=Strict, limitada a
-`/api/replay`. Loopback y Origin permitido son defensas adicionales, no sustituyen
-la autenticación. Otro sitio no recibe la cookie y otro Origin es rechazado incluso
-con cookie válida. No introducir API_KEY en Angular ni publicar por túneles/proxies.
-El replay envía un evento por paso mediante `POST /api/events/batch` en loopback,
-con X-API-Key leída exclusivamente del entorno backend. Usa el mismo PORT del
-servidor y un timeout de 10 segundos, sin redirecciones ni reintentos automáticos.
-No se configura una URL externa. Ver [replay local](docs/replay-local.md).
+Abrir PowerShell en la raíz del clon:
 
-## Verificaciones
+```powershell
+Invoke-RestMethod http://localhost:3000/api/health
+```
+
+**Resultado esperado:** `status: ok` y `database: connected`. Si no se obtiene,
+resolver el problema antes del replay; consultar los problemas frecuentes más abajo.
+
+### 5. Iniciar Angular — terminal 2
+
+Abrir otra PowerShell en la raíz del clon:
+
+```powershell
+npm.cmd --prefix frontend start -- --host localhost --port 4200
+```
+
+**Resultado esperado:** compilación de desarrollo satisfactoria y servidor disponible.
+Abrir **http://localhost:4200**: aparecen dashboard, indicadores, tabla, alertas y
+controles. Una base nueva todavía no contiene vehículos. Mantener terminales 1 y 2
+abiertas mientras se prueba la aplicación.
+
+En bash/zsh los comandos npm usan `npm` en lugar de `npm.cmd`; health puede
+comprobarse con `curl --fail http://localhost:3000/api/health`. El bloque de
+variables y comprobación de puertos anterior es específico de PowerShell.
+
+## Demostración funcional
+
+1. En Angular, pulsar **Autorizar controles locales**. En el diálogo del navegador,
+   usar usuario `replay` y REPLAY_PASSWORD del `.env` generado, consultándola solo
+   localmente en el editor. No grabar ni compartir la contraseña.
+2. Mantener el intervalo de 750 ms y pulsar **Iniciar**. Debe avanzar progresivamente
+   de 0 a 24 y actualizar el dashboard sin recargarlo.
+3. Pulsar **Pausar** y esperar confirmación: no deben empezar nuevos eventos;
+   el que estaba en curso termina. **Reanudar** continúa desde ese punto.
+4. Al finalizar el primer recorrido, comprobar la tabla siguiente.
+5. Pulsar **Reiniciar** y después **Iniciar**, conservando PostgreSQL. Comprobar
+   los resultados del segundo recorrido.
+
+| Resultado | Primer replay, base nueva | Segundo replay, sin limpiar |
+|---|---:|---:|
+| Procesados | 24 | 24 |
+| Aceptados | 20 | 0 |
+| Duplicados | 2 | 22 |
+| Rechazados | 2 | 2 |
+| Eventos persistidos | 20 | 20 |
+| Vehículos | 8 | 8 |
+| Alertas | 4 | 4 |
+
+**Reiniciar restablece índice y contadores, nunca borra PostgreSQL.** Si la base
+ya contenía el fixture completo, el primer recorrido observado dará los números
+del segundo. Dos pestañas comparten un único motor. Se respeta el orden original
+de las 24 líneas; los duplicados no generan notificaciones SSE nuevas.
+
+Comprobar también:
+
+- Buscar `VEH-001`: la tabla se filtra tras unos 300 ms y los indicadores conservan
+  los totales globales. **Limpiar** vuelve a mostrar todos; una búsqueda sin
+  coincidencias muestra **No se encontraron vehículos**.
+- Seleccionar un identificador para consultar su historial GPS cronológico.
+  El historial seleccionado y los vehículos se actualizan mediante SSE.
+- El evento tardío `E-001-00` alerta sin sustituir el estado de `E-001-02`;
+  `E-004-03` a 80 km/h no alerta y `E-005-03` a 81 sí.
+- Tras una reconexión SSE se recuperan vehículos, alertas e historial seleccionado
+  sin recarga manual. Reiniciar el proceso backend pierde sesión y progreso del
+  replay: volver a autorizar los controles si es necesario.
+
+Consultas adicionales, desde la terminal 3:
+
+```powershell
+Invoke-RestMethod 'http://localhost:3000/api/vehicles?search=VEH-001'
+Invoke-RestMethod 'http://localhost:3000/api/vehicles/VEH-001/events'
+Invoke-RestMethod 'http://localhost:3000/api/alerts'
+```
+
+Esperar el vehículo coincidente, su historial ordenado y las alertas históricas.
+Más detalles: [guía del replay](docs/replay-local.md).
+
+## Pruebas y compilación — terminal 3
+
+Desde la raíz del clon:
 
 ```powershell
 npm.cmd --prefix backend run typecheck
 npm.cmd --prefix backend test
 npm.cmd --prefix backend run build
-npm.cmd --prefix frontend run build
+npm.cmd --prefix frontend test -- --watch=false --browsers=ChromeHeadless
+npm.cmd --prefix frontend run build -- --configuration production
 ```
 
-Los tests normales usan dobles de PostgreSQL y reloj simulado, con HTTP/SSE reales
-en loopback. Incluyen idempotencia, rollback, autorización, comandos simultáneos y
-configuración segura. No leen el `.env` personal ni escriben en PostgreSQL.
-Build Angular comprueba tipos y plantillas; no es E2E. Ver el resultado de la
-[instalación aislada](docs/delivery-verification.md) para distinguir esas pruebas.
+**Resultados recientes reportados:** 35 pruebas backend y 6 Angular aprobadas,
+0 fallidas; compilación de producción Angular satisfactoria. Los comandos
+permiten repetir la validación, sin atribuir una nueva ejecución a este README.
+El script backend test compila antes de ejecutar `node:test`.
 
-## Diagnóstico y límites
+### Usar Microsoft Edge cuando Chrome no está disponible
 
-- EEXIST al generar entorno: se conservó `.env`. Revisarlo o usar otro clon.
-- Puerto PostgreSQL ocupado: cambiar DB_PORT para el proyecto nuevo.
-- Health 503: revisar Docker healthy y DB_* coincidentes. El volumen conserva
-  usuarios y contraseña iniciales; no eliminarlo para arreglar una demo nueva.
-- Replay 503: revisar REPLAY_ENABLED y REPLAY_PASSWORD; 401: volver a autorizar.
-- Replay 403: usar `localhost:4200` y mantener `localhost` también para la API,
-  sin mezclarlo con `127.0.0.1` en URLs del navegador.
-- Angular 19 se conserva por alcance del reto; actualizar su soporte es tarea
-  posterior. SSE/replay son de una instancia y no durables; faltan paginación,
-  pruebas E2E y concurrencia real exhaustiva.
+Las pruebas Angular usan Karma y el launcher ChromeHeadless. En Windows puede
+indicarse el ejecutable Chromium de Edge mediante CHROME_BIN, sin instalar otro
+launcher ni modificar configuración:
 
-Requisitos originales: [contrato](docs/common-spec.md),
-[criterios](docs/CRITERIOS-EVALUACION.md), [demo oficial](docs/DEMO-REPLAY.md).
+```powershell
+$edgePath = Join-Path ${env:ProgramFiles(x86)} 'Microsoft/Edge/Application/msedge.exe'
+if (-not (Test-Path -LiteralPath $edgePath)) {
+    $edgePath = Join-Path $env:ProgramFiles 'Microsoft/Edge/Application/msedge.exe'
+}
+if (-not (Test-Path -LiteralPath $edgePath)) {
+    throw 'Edge no encontrado: indique su ruta instalada en CHROME_BIN antes de ejecutar las pruebas.'
+}
+$env:CHROME_BIN = $edgePath
+npm.cmd --prefix frontend test -- --watch=false --browsers=ChromeHeadless
+```
+
+**Resultado esperado:** Karma inicia el navegador en modo headless y termina con
+6 pruebas correctas. CHROME_BIN solo afecta esta terminal y sus procesos hijos.
+Si Edge está instalado en otra ruta, asignar esa ruta real a CHROME_BIN.
+
+Las pruebas backend usan persistencia simulada y, según el caso, reloj simulado,
+con conexiones HTTP/SSE reales en loopback. Cubren validación, idempotencia,
+conflictos, rollback simulado, autenticación, replay y configuración; no escriben
+en PostgreSQL ni requieren el `.env` personal. Las seis Angular usan servicios
+simulados: creación, contadores, búsqueda con debounce, historial,
+`vehicle.updated` y `stream.reconnected`. No equivalen a E2E de navegador con
+backend y PostgreSQL reales. Un build comprueba compilación, tipos y plantillas.
+
+El [registro de instalación aislada](docs/delivery-verification.md) distingue el
+ensayo histórico con PostgreSQL real, anterior al adaptador HTTP, de estas suites.
+Las validaciones manuales posteriores se documentan con su fuente en las evidencias.
+
+## Variables de entorno y seguridad
+
+El backend carga `.env` **de la raíz**, antes del pool, desde `src` o `dist`, sin
+depender del directorio de ejecución. No carga un `.env` dentro de backend.
+Las variables exportadas explícitamente tienen precedencia.
+
+| Variable | Uso |
+|---|---|
+| DB_HOST | `127.0.0.1`; Node corre fuera de Docker. |
+| DB_PORT | `5434` en la configuración de ejemplo; el procedimiento aislado usa `55434` mediante la terminal. |
+| DB_USER / DB_NAME | `fleetpulse_demo`, iguales en Compose y backend. |
+| DB_PASSWORD | Contraseña local generada; obligatoria para Compose. |
+| PORT | `3000`; Angular y el login utilizan este puerto. |
+| API_KEY | Protege POST /api/events/batch; exclusiva del backend/reproductor. |
+| REPLAY_ENABLED | `true` habilita controles; `false` los bloquea. |
+| REPLAY_PASSWORD | Contraseña independiente para autorizar el replay. |
+
+`DATABASE_URL` no se consume. `.env` permanece excluido de Git. Cambiarlo no cambia
+usuarios o contraseñas de un volumen ya inicializado ni vuelve a ejecutar SQL.
+PostgreSQL solo se publica en localhost; no exponer panel, API o SSE por Internet,
+túneles o proxies con esta configuración de demostración.
+
+La ingesta requiere X-API-Key: cabecera ausente devuelve 401 e incorrecta 403.
+El replay la lee del entorno backend y envía cada evento por HTTP al mismo servidor
+en loopback, con timeout de 10 segundos, sin URL externa, redirecciones ni reintentos
+automáticos. Nunca introducir esa clave en Angular, URLs, logs o video.
+
+Los controles usan sesión aleatoria HttpOnly, SameSite=Strict, restringida a
+`/api/replay`. Loopback y Origin permitido complementan la autenticación; CORS
+por sí solo no autoriza. Usar `localhost` en las URLs del navegador para mantener
+coherencia de cookies y orígenes.
+
+## Problemas frecuentes y límites
+
+| Síntoma | Qué revisar |
+|---|---|
+| EEXIST al generar entorno | `.env` se conservó. Revisarlo localmente o usar otro clon; no sobrescribirlo automáticamente. |
+| Puerto PostgreSQL ocupado | Elegir otro DB_PORT libre para el proyecto nuevo antes de Compose. |
+| Health 503 o error de autenticación PostgreSQL | Estado healthy, destino y DB_* coincidentes. El volumen conserva sus credenciales iniciales; no borrarlo para corregir una conexión. |
+| Replay 503 | REPLAY_ENABLED, REPLAY_PASSWORD y disponibilidad del fixture; consultar errores seguros del replay. |
+| Replay 401 | Volver a autorizar el navegador, especialmente tras reiniciar backend. |
+| Replay 403 | Usar localhost:4200 y localhost para la API; no mezclar 127.0.0.1 en el navegador. |
+| Karma no encuentra Chrome | Configurar CHROME_BIN hacia Edge según el procedimiento anterior. |
+
+SSE, sesiones y progreso del replay residen en un proceso y no son durables.
+La recuperación por GET restaura el dashboard, pero no reproduce todos los avisos
+perdidos. Siguen pendientes concurrencia real exhaustiva, paginación, E2E
+automatizado completo y ensayo de rollback. Angular 19 se conserva por el alcance
+del reto; revisar toolchain y dependencias antes de ampliar el despliegue.
+
+## Documentación y evidencias
+
+- [Contrato común](docs/common-spec.md), [criterios](docs/CRITERIOS-EVALUACION.md)
+  y [demo oficial](docs/DEMO-REPLAY.md).
+- [Modernización del legacy](docs/LEGACY-MODERNIZATION.md): defectos, correcciones,
+  integridad, transición y rollback propuesto.
+- [Flujo de trabajo con IA](docs/AI-WORKFLOW.md): iteraciones, revisión humana y CI.
+- [Retrospectiva](docs/RETROSPECTIVA.md): decisiones, resultados y próximos pasos.
+- [Evidencias ampliadas](docs/ai-development-evidence.md) y
+  [verificación de instalación](docs/delivery-verification.md).
+
+**Video de demostración pendiente:** todavía no se presenta como entregado.

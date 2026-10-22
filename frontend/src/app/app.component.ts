@@ -4,7 +4,7 @@ import { FleetService } from './core/services/fleet.service';
 import { Vehicle } from './core/models/vehicle.model';
 import { FleetAlert } from './core/models/alert.model';
 import { OnDestroy } from '@angular/core';
-import { Subscription } from 'rxjs';
+import { Subject, Subscription, catchError, of, switchMap, timer } from 'rxjs';
 import { StreamService } from './core/services/stream.service';
 import { TelemetryEvent } from './core/models/telemetry-event.model';
 import { ReplayControlsComponent } from './replay-controls/replay-controls.component';
@@ -20,6 +20,23 @@ export class AppComponent implements OnInit, OnDestroy {
   private readonly fleetService = inject(FleetService);
   private readonly streamService = inject(StreamService);
   private streamSubscription?: Subscription;
+  private searchSubscription?: Subscription;
+  private readonly searchRequests = new Subject<number>();
+  searchText = '';
+  filteredVehicles: Vehicle[] = [];
+  searchLoading = false;
+  searchError = '';
+
+  searchVehicles(text: string): void {
+    this.searchText = text;
+    this.refreshTable(text ? 300 : 0);
+  }
+
+  private refreshTable(delayMs = 0): void {
+    this.searchLoading = true;
+    this.searchError = '';
+    this.searchRequests.next(delayMs);
+  }
 
   loadVehicles(): void {
     this.fleetService.getVehicles().subscribe({
@@ -27,6 +44,7 @@ export class AppComponent implements OnInit, OnDestroy {
         this.vehicles = data;
         this.loading = false;
         this.error = '';
+        this.refreshTable();
       },
       error: () => {
         this.error = 'No se pudieron cargar los vehículos.';
@@ -37,12 +55,29 @@ export class AppComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.streamSubscription?.unsubscribe();
+    this.searchSubscription?.unsubscribe();
+    this.searchRequests.complete();
   }
   vehicles: Vehicle[] = [];
   loading = true;
   error = '';
 
-  ngOnInit(): void {
+  ngOnInit(): void {1
+    // Cancel both the debounce timer and any HTTP request on each new input/refresh.
+    this.searchSubscription = this.searchRequests.pipe(
+      switchMap(delayMs => timer(delayMs).pipe(
+        switchMap(() => this.searchText
+          ? this.fleetService.getVehicles(this.searchText)
+          : of(this.vehicles)),
+        catchError(() => {
+          this.searchError = 'No se pudo realizar la búsqueda de vehículos.';
+          return of(this.filteredVehicles);
+        }),
+      )),
+    ).subscribe(vehicles => {
+      this.filteredVehicles = vehicles;
+      this.searchLoading = false;
+    });
     this.loadVehicles();
     this.loadAlerts();
 
@@ -50,10 +85,20 @@ export class AppComponent implements OnInit, OnDestroy {
       next: (eventType) => {
         if (eventType === 'vehicle.updated') {
           this.loadVehicles();
+          if (this.selectedVehicle){
+             this.refreshSelectedVehicleHistory();
+          }
         }
 
         if (eventType === 'alert.created') {
           this.loadAlerts();
+        }
+        if(eventType=== 'stream.reconnected'){
+          this.loadVehicles();
+          this.loadAlerts();
+          if(this.selectedVehicle){
+            this.refreshSelectedVehicleHistory();
+          }
         }
       },
     });
@@ -113,4 +158,20 @@ export class AppComponent implements OnInit, OnDestroy {
       },
     });
   }
+  refreshSelectedVehicleHistory():void{
+    const vehicleId = this.selectedVehicle;
+    if(!vehicleId)return;
+    this.fleetService.getVehicleEvents(vehicleId).subscribe({
+      next:(event)=>{
+        if (this.selectedVehicle !==vehicleId) return;
+        this.vehicleEvents=event;
+        this.historyError="";
+      },
+        error: () => {
+        if (this.selectedVehicle !== vehicleId) return;
+        this.historyError = 'No se pudo cargar el historial.';
+      },
+    })
+  }
+
 }

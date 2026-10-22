@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Vehicle } from '../models/vehicle.model';
 import { FleetAlert } from '../models/alert.model';
@@ -12,8 +12,9 @@ export class FleetService {
   private readonly http = inject(HttpClient);
   private readonly apiUrl = 'http://localhost:3000/api';
 
-  getVehicles(): Observable<Vehicle[]> {
-    return this.http.get<Vehicle[]>(`${this.apiUrl}/vehicles`);
+  getVehicles(search?: string): Observable<Vehicle[]> {
+    const params = search ? new HttpParams().set('search', search) : new HttpParams();
+    return this.http.get<Vehicle[]>(`${this.apiUrl}/vehicles`, { params });
   }
   getAlerts(): Observable<FleetAlert[]> {
     return this.http.get<FleetAlert[]>(`${this.apiUrl}/alerts`);

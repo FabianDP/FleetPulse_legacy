@@ -9,6 +9,45 @@ h1 {
   color: #163a63;
 }
 
+.vehicle-search {
+  margin-top: 24px;
+}
+
+.vehicle-search label {
+  display: block;
+  margin-bottom: 8px;
+  color: #163a63;
+}
+
+.vehicle-search-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.vehicle-search input {
+  flex: 1 1 200px;
+  min-width: 0;
+}
+
+.vehicle-search input, .vehicle-search button {
+  padding: 10px 12px;
+  border: 1px solid #64748b;
+  border-radius: 6px;
+  font: inherit;
+}
+
+.vehicle-search button {
+  background: #163a63;
+  color: white;
+  cursor: pointer;
+}
+
+.vehicle-search button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
 table {
   width: 100%;
   border-collapse: collapse;

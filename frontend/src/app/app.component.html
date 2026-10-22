@@ -28,18 +28,36 @@
   <p *ngIf="loading">Cargando vehículos...</p>
   <p *ngIf="error">{{ error }}</p>
 
-  <table *ngIf="!loading && !error">
+  <div class="vehicle-search">
+    <label for="vehicle-search">Buscar vehículo</label>
+    <div class="vehicle-search-controls">
+      <input id="vehicle-search" type="search" [value]="searchText"
+        (input)="searchVehicles($any($event.target).value)"
+        aria-controls="vehicle-table" />
+      <button type="button" (click)="searchVehicles('')" [disabled]="!searchText">Limpiar</button>
+    </div>
+  </div>
+  <div aria-live="polite">
+    <p *ngIf="searchLoading">Buscando vehículos...</p>
+    <p *ngIf="searchError" role="alert">{{ searchError }}</p>
+    <p *ngIf="!loading && !error && !searchLoading && !searchError && filteredVehicles.length === 0">
+      No se encontraron vehículos
+    </p>
+  </div>
+
+  <table id="vehicle-table" *ngIf="!loading && !error && filteredVehicles.length > 0">
     <thead>
       <tr>
         <th>Vehículo</th>
         <th>Velocidad</th>
         <th>Estado</th>
+        <th>Encendido</th>
         <th>Última actualización</th>
       </tr>
     </thead>
 
     <tbody>
-      <tr *ngFor="let vehicle of vehicles">
+      <tr *ngFor="let vehicle of filteredVehicles">
         <td>
           <button
             type="button"
@@ -51,6 +69,7 @@
         </td>
         <td>{{ vehicle.speedKph }} km/h</td>
         <td>{{ vehicle.status }}</td>
+        <td>{{ vehicle.ignitionOn ?'Si':'No' }}</td>
         <td>{{ vehicle.observedAt | date: "medium" }}</td>
       </tr>
     </tbody>
@@ -76,7 +95,7 @@
           <td>{{ event.eventId }}</td>
           <td>{{ event.observedAt | date: "medium" }}</td>
           <td>{{ event.latitude }}</td>
-          <td>{{ event.longitude }}</td>
+          <td>{{ event.longitude | number:'1.3-6' }}</td>
           <td>{{ event.speedKph }} km/h</td>
         </tr>
       </tbody>
