@@ -193,12 +193,8 @@ En su pedido de instalación declaró que replay y dashboard ya se habían proba
 manualmente. Ese resultado visual es **reportado por el desarrollador**; falta
 captura/video para el evaluador.
 
-**Límite contractual que requiere aprobación.** La demo oficial pide enviar el
-fixture a `POST /api/events/batch` con X-API-Key. El pedido de esta iteración solicita
-reutilizar directamente la ingesta y el código lo hace dentro del servidor.
-La diferencia está documentada; no se presenta como cumplimiento literal del
-transporte HTTP de la demo. Corresponde al desarrollador justificarla o resolverla
-antes de entregar. No se cambió el requisito original.
+**Límite contractual que requiere aprobación.** La demo oficial exige enviar el fixture mediante POST /api/events/batch con X-API-Key. La implementación inicial de esta iteración reutilizaba directamente ingestBatch dentro del servidor, por lo que no cumplía literalmente el requisito de transporte HTTP.
+Durante la revisión humana de los documentos de la prueba técnica se identificó esta diferencia. Posteriormente se corrigió mediante un cliente HTTP interno del backend, conservando la lógica de validación, persistencia e idempotencia. La corrección y sus pruebas se documentan en la sección «Corrección posterior a la revisión humana: transporte HTTP del replay».
 
 **Evidencia verificable:** `b03c040`,
 [motor](../backend/src/services/replay.service.ts),
@@ -335,7 +331,7 @@ E-001-02. E-004-03 a 80 no alerta; E-005-03 a 81 sí.
 
 | Evidencia | Qué permite afirmar | Qué no acredita |
 |---|---|---|
-| 26 tests backend | Validación, HTTP/auth, flujo de transacciones, consultas, SSE, replay y configuración con dobles | Concurrencia SQL real exhaustiva o UI E2E |
+| 35 tests backend | Validación, HTTP/auth,transacciones,consultas, SSE, replay y configuración y transporte Http real mediante sockets,con persistencia simulada en las pruebas correspondientes| Concurrencia SQL real exhaustiva o UI E2E automatizada |
 | Prueba aislada PostgreSQL | Persistencia, dos replays, orden de historial y estados con el motor real | Entrega durable SSE, varias instancias o carga de producción |
 | Builds Angular | Compilación de aplicación y plantillas | Que se ejecutaron los tests del navegador |
 | review-02/review-03 | Aprobaciones y comprobaciones manuales registradas | Existencia de capturas o logs no adjuntos |
@@ -427,8 +423,8 @@ inventar logs, fechas ni capturas. No se incluyen credenciales ni contenido del 
 
 ### Pendientes antes de publicar
 
-- [ ] Aprobar la atribución de tareas y la agrupación de iteraciones; completar el
-  prompt original y la revisión del frontend solo si se dispone de ellos.
+- [x] Corregir la diferencia entre replay integrado y transporte HTTP
+  de la demo; validado mediante pruebas automatizadas y comprobación manual.
 - [ ] Adjuntar URL/captura del run de Actions en dev, SHA y estado de ambos jobs.
 - [ ] Adjuntar video/capturas de los dos replays, pausa/reanudación y dashboard;
   confirmar que no muestran configuración sensible.
@@ -476,8 +472,10 @@ HTTP, respuesta inválida, timeout, rechazo de redirecciones y rollback simulado
 La clave usada en pruebas es sintética. Los controles de sesión existentes se
 conservan y siguen cubiertos por sus pruebas.
 
-**Límite de evidencia.** No se ejecutó PostgreSQL real para esta corrección y no se
-creó ninguna base o contenedor. El ensayo de instalación real anterior continúa
-siendo válido para aquella versión; no se presenta como validación del transporte
-nuevo. La revalidación real requiere autorización para una instancia independiente.
-Los cambios quedan disponibles para revisión sin commit ni push automáticos.
+**Validación manual posterior al desarrollo.** Después de incorporar el transporte HTTP, se ejecutó FleetPulse desde Angular y se comprobó en los registros de Express que el inicio del replay mediante POST /api/replay/start generaba solicitudes reales a POST /api/events/batch, con respuestas HTTP 200. Se verificó el avance hasta completar los 24 eventos y que, al finalizar, dejaban de enviarse nuevas solicitudes de ingesta. Las consultas posteriores a GET /api/replay correspondían únicamente al seguimiento del estado.
+
+Adicionalmente, se ejecutó npm test en el backend con 35 pruebas aprobadas, 0 fallidas y 0 omitidas. La compilación de producción del frontend mediante npm run build finalizó correctamente. Estas comprobaciones fueron realizadas manualmente por el desarrollador y no deben confundirse con una prueba E2E automatizada de navegador
+
+**Límite de evidencia.**Las pruebas automatizadas del nuevo transporte HTTP utilizan conexiones HTTP reales, pero sustituyen la persistencia por un repositorio simulado en los casos correspondientes. La validación manual posterior confirmó el funcionamiento del transporte HTTP desde la aplicación, sin constituir una nueva prueba automatizada integral con PostgreSQL real.
+
+La instalación y ejecución con PostgreSQL independiente se había verificado previamente para una versión anterior. Los cambios posteriores del transporte HTTP fueron revisados, compilados, probados y finalmente incorporados a GitHub por decisión del desarrollador. No se atribuye a Codex la ejecución manual ni el commit realizado por el desarrollador.
