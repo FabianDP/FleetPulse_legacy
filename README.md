@@ -1,5 +1,7 @@
 # FleetPulse
 
+**Video de demostración** [Video de entrega](https://drive.google.com/file/d/1suGL7A_y2nNWNVntb7sJqyEu6WrfSQ_R/view?usp=sharing).
+
 FleetPulse es un sistema de monitoreo GPS desarrollado para la prueba técnica de
 Detektor. Moderniza una ingesta legacy con Node.js/TypeScript, PostgreSQL y Angular
 19: valida eventos, evita duplicados, conserva el historial cronológico y genera
@@ -372,4 +374,3 @@ El uso de IA no sustituyó las decisiones técnicas ni la responsabilidad sobre 
 - [Evidencias ampliadas](docs/ai-development-evidence.md),[Pruevas Manuales](docs/TEST-EVIDENCE.md) y
   [verificación de instalación](docs/delivery-verification.md).
 
-**Video de demostración pendiente:** todavía no se presenta como entregado.
