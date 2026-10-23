@@ -108,17 +108,15 @@ sin reconstruir prompts ausentes ni inventar aprobaciones.
 
 ## Próximos pasos por prioridad
 
-1. **Cerrar la evidencia de entrega:** revisar los documentos y adjuntar el video
-   obligatorio con ambos replays, pausa/reanudación, estados, alertas y CI, sin secretos.
-2. **Ampliar cobertura de recuperación:** a partir de la reconexión y las seis
+1. **Ampliar cobertura de recuperación:** a partir de la reconexión y las seis
    pruebas Angular implementadas, cubrir desconexiones repetidas, errores de GET
    y la ventana entre snapshot y suscripción; conservar filtro e historial.
-3. **Consolidar integración:** repetir ambos replays HTTP contra PostgreSQL aislado
+2. **Consolidar integración:** repetir ambos replays HTTP contra PostgreSQL aislado
    autorizado y automatizar concurrencia, conflictos y eventos tardíos; incorporar
    un recorrido de navegador para controles y actualización sin recarga.
-4. **Ensayar recuperación:** aprobar y probar backup/restauración y rollback en
+3. **Ensayar recuperación:** aprobar y probar backup/restauración y rollback en
    aislamiento, reconciliando escrituras posteriores y verificando compatibilidad.
-5. **Preparar crecimiento solo si se requiere:** paginación, métricas y pruebas de
+4. **Preparar crecimiento solo si se requiere:** paginación, métricas y pruebas de
    carga; evaluar outbox, coordinación entre instancias y checkpoint de replay
    según los requisitos de entrega y recuperación.
 
