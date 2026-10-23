@@ -2,8 +2,8 @@
 -- Eventos GPS válidos y únicos
 
 CREATE TABLE IF NOT EXISTS telemetry_events (
-    event_id VARCHAR(100) PRIMARY KEY,
-    vehicle_id VARCHAR(100) NOT NULL,
+    event_id TEXT PRIMARY KEY,
+    vehicle_id TEXT NOT NULL,
     observed_at TIMESTAMPTZ NOT NULL,
     latitude DOUBLE PRECISION NOT NULL,
     longitude DOUBLE PRECISION NOT NULL,
@@ -31,8 +31,8 @@ CONSTRAINT chk_speed
 -- Último estado conocido de cada vehículo
 
 CREATE TABLE IF NOT EXISTS vehicle_current_state (
-    vehicle_id VARCHAR(100) PRIMARY KEY,
-    event_id VARCHAR(100) NOT NULL UNIQUE
+    vehicle_id TEXT PRIMARY KEY,
+    event_id TEXT NOT NULL UNIQUE
         REFERENCES telemetry_events(event_id),
     observed_at TIMESTAMPTZ NOT NULL,
     latitude DOUBLE PRECISION NOT NULL,
@@ -49,9 +49,9 @@ CREATE TABLE IF NOT EXISTS vehicle_current_state (
 
 CREATE TABLE IF NOT EXISTS alerts (
     id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    event_id VARCHAR(100) NOT NULL UNIQUE
+    event_id TEXT NOT NULL UNIQUE
         REFERENCES telemetry_events(event_id),
-    vehicle_id VARCHAR(100) NOT NULL,
+    vehicle_id TEXT NOT NULL,
     type VARCHAR(30) NOT NULL DEFAULT 'OVERSPEED',
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 

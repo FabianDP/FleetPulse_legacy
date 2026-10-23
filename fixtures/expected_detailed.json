@@ -1,0 +1,116 @@
+{
+  "first_run": {
+    "input": 24,
+    "accepted": 20,
+    "duplicates": 2,
+    "rejected": 2,
+    "vehicles": 8,
+    "alerts": 4
+  },
+  "accepted_event_ids": [
+    "E-001-01",
+    "E-001-02",
+    "E-002-01",
+    "E-002-02",
+    "E-003-01",
+    "E-003-02",
+    "E-004-01",
+    "E-004-02",
+    "E-005-01",
+    "E-005-02",
+    "E-006-01",
+    "E-006-02",
+    "E-007-01",
+    "E-007-02",
+    "E-008-01",
+    "E-008-02",
+    "E-001-00",
+    "E-003-03",
+    "E-004-03",
+    "E-005-03"
+  ],
+  "duplicates_at_input_indexes_zero_based": [
+    {
+      "index": 17,
+      "eventId": "E-002-02"
+    },
+    {
+      "index": 23,
+      "eventId": "E-001-02"
+    }
+  ],
+  "rejections_at_input_indexes_zero_based": [
+    {
+      "index": 21,
+      "eventId": "E-006-03",
+      "reason": "INVALID_LATITUDE"
+    },
+    {
+      "index": 22,
+      "eventId": "E-007-03",
+      "reason": "INVALID_SPEED"
+    }
+  ],
+  "overspeed_event_ids": [
+    "E-002-02",
+    "E-005-02",
+    "E-001-00",
+    "E-005-03"
+  ],
+  "latest_by_vehicle": {
+    "VEH-001": "E-001-02",
+    "VEH-002": "E-002-02",
+    "VEH-003": "E-003-03",
+    "VEH-004": "E-004-03",
+    "VEH-005": "E-005-03",
+    "VEH-006": "E-006-02",
+    "VEH-007": "E-007-02",
+    "VEH-008": "E-008-02"
+  },
+  "history_by_vehicle_ascending": {
+    "VEH-001": [
+      "E-001-00",
+      "E-001-01",
+      "E-001-02"
+    ],
+    "VEH-002": [
+      "E-002-01",
+      "E-002-02"
+    ],
+    "VEH-003": [
+      "E-003-01",
+      "E-003-02",
+      "E-003-03"
+    ],
+    "VEH-004": [
+      "E-004-01",
+      "E-004-02",
+      "E-004-03"
+    ],
+    "VEH-005": [
+      "E-005-01",
+      "E-005-02",
+      "E-005-03"
+    ],
+    "VEH-006": [
+      "E-006-01",
+      "E-006-02"
+    ],
+    "VEH-007": [
+      "E-007-01",
+      "E-007-02"
+    ],
+    "VEH-008": [
+      "E-008-01",
+      "E-008-02"
+    ]
+  },
+  "second_run_without_reset": {
+    "accepted": 0,
+    "duplicates": 22,
+    "rejected": 2,
+    "persisted_events": 20,
+    "vehicles": 8,
+    "alerts": 4
+  }
+}

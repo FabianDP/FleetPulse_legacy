@@ -1,0 +1,63 @@
+{
+  "notes": "CASOS INDEPENDIENTES: no mezclar con el fixture original de 24 líneas; usar reset de desarrollo",
+  "cases": [
+    {
+      "id": "EVENT_ID_CONFLICT",
+      "precondition": "Ingerir evento E-001-02 original",
+      "attempt": {
+        "eventId": "E-001-02",
+        "vehicleId": "VEH-001",
+        "observedAt": "2026-10-18T10:05:00Z",
+        "latitude": 14.612,
+        "longitude": -90.53800000000001,
+        "speedKph": 125,
+        "ignitionOn": true
+      },
+      "expected": "No sobrescribir original, no crear evento ni alerta adicional, conflicto explicito"
+    },
+    {
+      "id": "INVALID_TYPE",
+      "event": {
+        "eventId": "E-TYPE-INVALID",
+        "vehicleId": "VEH-001",
+        "observedAt": "2026-10-18T10:05:00Z",
+        "latitude": 14.612,
+        "longitude": -90.53800000000001,
+        "speedKph": "80",
+        "ignitionOn": true
+      },
+      "expected": "Rechazo; speedKph debe ser numero finito y no string"
+    },
+    {
+      "id": "CONCURRENT_DUPLICATE",
+      "event": {
+        "eventId": "E-001-02",
+        "vehicleId": "VEH-001",
+        "observedAt": "2026-10-18T10:05:00Z",
+        "latitude": 14.612,
+        "longitude": -90.53800000000001,
+        "speedKph": 35,
+        "ignitionOn": true
+      },
+      "steps": "Desde base limpia, enviar simultaneamente dos peticiones con este evento",
+      "expected": "Unico evento persistido, una peticion duplicada, sin alertas duplicadas"
+    },
+    {
+      "id": "AUTH_FAILURE",
+      "request": "POST /api/events/batch sin X-API-Key, luego con clave incorrecta",
+      "expected": "HTTP 401/403, ningun evento creado"
+    },
+    {
+      "id": "EMPTY_BATCH",
+      "request": {
+        "events": []
+      },
+      "expected": "Error explicito documentado, ningun evento creado"
+    },
+    {
+      "id": "MALFORMED_JSON",
+      "request": "{broken-json",
+      "expected": "HTTP 400 sin stack trace ni secretos"
+    }
+  ]
+}
