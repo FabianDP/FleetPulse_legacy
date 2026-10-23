@@ -363,13 +363,13 @@ El uso de IA no sustituyó las decisiones técnicas ni la responsabilidad sobre 
 
 ## Documentación y evidencias
 
-- [Contrato común](docs/common-spec.md), [criterios](docs/CRITERIOS-EVALUACION.md)
-  y [demo oficial](docs/DEMO-REPLAY.md).
+- [Contrato común](docs/Documentos_originales/common-spec.md), [criterios](docs/Documentos_originales/CRITERIOS-EVALUACION.md)
+  y [demo oficial](docs/Documentos_originales/DEMO-REPLAY.md).
 - [Modernización del legacy](docs/LEGACY-MODERNIZATION.md): defectos, correcciones,
   integridad, transición y rollback propuesto.
 - [Flujo de trabajo con IA](docs/AI-WORKFLOW.md): iteraciones, revisión humana y CI.
 - [Retrospectiva](docs/RETROSPECTIVA.md): decisiones, resultados y próximos pasos.
-- [Evidencias ampliadas](docs/ai-development-evidence.md) y
+- [Evidencias ampliadas](docs/ai-development-evidence.md),[Pruevas Manuales](docs/TEST-EVIDENCE.md) y
   [verificación de instalación](docs/delivery-verification.md).
 
 **Video de demostración pendiente:** todavía no se presenta como entregado.

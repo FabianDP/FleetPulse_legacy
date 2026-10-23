@@ -1,11 +1,11 @@
-<section class="replay" aria-labelledby="replay-title">
+<section class="replay" [class.completed]="progress?.state === 'completed'" aria-labelledby="replay-title">
   <div class="heading">
     <div><h2 id="replay-title">Reproducción GPS</h2><p>Eventos de demostración, en su orden original.</p></div>
     <span class="state" role="status">{{ progress ? labels[progress.state] : 'Sin conexión autorizada' }}</span>
   </div>
   <p *ngIf="error" role="alert">{{ error }}</p>
   <a *ngIf="!authorized" [href]="loginUrl">Autorizar controles locales</a>
-  <div class="controls">
+  <div class="control-group"><div class="controls">
     <label>Intervalo (ms)
       <input type="number" [(ngModel)]="intervalMs" min="100" max="60000" step="50"
         [disabled]="busy || progress?.state === 'running'" aria-describedby="interval-help">
@@ -16,7 +16,9 @@
     <button type="button" (click)="control('restart')" [disabled]="busy || !authorized || !validInterval">Reiniciar</button>
   </div>
   <p id="interval-help" class="hint">Entre 100 y 60 000 ms. Reiniciar vuelve al primer evento y conserva los datos guardados.</p>
+  </div>
   <ng-container *ngIf="progress as current">
+    <div class="results" aria-label="Resultados del replay">
     <div class="progress-label"><span>Procesados {{ current.processed }} de {{ current.total }}</span><span>Intervalo actual: {{ current.intervalMs }} ms</span></div>
     <progress [value]="current.processed" [max]="current.total || 24" aria-label="Progreso de reproducción"></progress>
     <dl class="counters">
@@ -24,6 +26,7 @@
       <div><dt>Duplicados</dt><dd>{{ current.duplicates }}</dd></div>
       <div><dt>Rechazados</dt><dd>{{ current.rejected }}</dd></div>
     </dl>
+    </div>
     <details *ngIf="current.errors.length"><summary>Motivos y errores ({{ current.errors.length }})</summary>
       <ul><li *ngFor="let issue of current.errors">Línea {{ issue.index + 1 }} · {{ issue.eventId || 'Sin identificador' }} · {{ issue.reason }}</li></ul>
     </details>
