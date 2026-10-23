@@ -185,26 +185,43 @@ Más detalles: [guía del replay](docs/replay-local.md).
 ### Limpieza segura de datos de demostración
 
 FleetPulse utiliza proyectos Docker Compose aislados para las demostraciones. Cada proyecto tiene su propio contenedor y volumen PostgreSQL.
+### Limpieza segura del entorno Docker de demostración
 
-Para iniciar una demostración desde cero, se recomienda crear un nuevo proyecto de prueba con un nombre único, siguiendo el procedimiento de instalación de este README.
+**Importante:** El comando `down --volumes` elimina los volúmenes asociados al proyecto Docker Compose seleccionado. Esto puede borrar permanentemente los datos de PostgreSQL de esa demostración.
 
-Si es necesario eliminar los datos de una demostración anterior, primero se debe detener el backend conectado a esa base y verificar el nombre exacto del proyecto Docker Compose utilizado.
+**1. Recuperar el nombre del proyecto**
 
-Desde la raíz del repositorio:
+La variable `$demoProject` solo existe en la sesión de PowerShell donde fue creada. Si se abre una nueva terminal, ejecutar:
+
+```powershell
+docker compose ls
+```
+
+Identificar el proyecto de demostración y asignar su nombre exacto:
+
+```powershell
+$demoProject = 'NOMBRE_EXACTO_DEL_PROYECTO'
+```
+
+**2. Verificar el proyecto antes de eliminarlo**
 
 ```powershell
 docker compose -f compose.yaml --env-file .env -p $demoProject ps
 ```
 
-Una vez confirmado que `$demoProject` corresponde exclusivamente a la demostración que se desea eliminar:
+Comprobar que los contenedores pertenecen exclusivamente a FleetPulse y al entorno de demostración que se desea eliminar.
+
+**3. Detener el backend**
+
+Detener el proceso del backend que utiliza esa base de datos.
+
+**4. Eliminar el entorno únicamente después de confirmar**
 
 ```powershell
 docker compose -f compose.yaml --env-file .env -p $demoProject down --volumes
 ```
 
-**Advertencia:** este último comando elimina permanentemente el volumen y los datos PostgreSQL asociados a ese proyecto. No debe ejecutarse sobre proyectos compartidos ni bases con información que deba conservarse.
-
-Para repetir la primera reproducción con datos limpios, crear un nuevo proyecto aislado siguiendo la sección de instalación y arranque.
+**Advertencia:** No ejecutar este último comando si existen dudas sobre el proyecto seleccionado o si sus datos deben conservarse.
 
 El botón **Reiniciar** del reproductor únicamente restablece su progreso y contadores; no elimina eventos, vehículos ni alertas persistidos.
 
