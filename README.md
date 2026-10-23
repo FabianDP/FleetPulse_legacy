@@ -370,7 +370,7 @@ La solución está diseñada para una demostración local de una sola instancia.
 
 ## Tiempo invertido y uso de inteligencia artificial
 
-**Tiempo efectivo aproximado:** 28,5 horas acumuladas entre el 20 y el 22 de octubre de 2026, hasta el momento de este registro. Se excluyen descansos y pausas personales. El tiempo podrá actualizarse al finalizar la entrega.
+**Tiempo efectivo aproximado:** 34,5 horas acumuladas entre el 20 y el 23 de octubre de 2026, hasta el momento de este registro. Se excluyen descansos y pausas personales.
 
 El trabajo comprendió análisis del código legacy, diseño de la solución, desarrollo backend y frontend, integración con PostgreSQL, implementación del reproductor GPS, pruebas, corrección de errores, configuración de CI y documentación.
 
