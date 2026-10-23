@@ -10,8 +10,8 @@ El legacy permanece intacto como referencia de regresión.
 El reto especializado del enunciado original de Detektor
 exige al menos cuatro defectos observables, implementación robusta, regresiones y
 este documento con antes/después, transición, integridad y rollback proporcionados.
-Se contrastó con los [criterios de evaluación](CRITERIOS-EVALUACION.md) y el
-[contrato común](common-spec.md).
+Se contrastó con los [criterios de evaluación](Documentos_originales/CRITERIOS-EVALUACION.md) y el
+[contrato común](Documentos_originales/common-spec.md).
 
 ## 2. Defectos diagnosticados y correcciones
 
