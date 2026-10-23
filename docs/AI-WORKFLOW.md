@@ -87,7 +87,7 @@ visuales en Angular, REUTILIZANDO la arquitectura existente».
 **23 pruebas aprobadas** con persistencia simulada. Reiniciar volvía al primer
 evento sin borrar PostgreSQL. Sin embargo, el motor invocaba directamente
 `ingestBatch`: reutilizaba las reglas, pero incumplía el transporte exigido por
-el [contrato de demo](DEMO-REPLAY.md).
+el [contrato de demo](Documentos_originales/DEMO-REPLAY.md).
 
 **Decisión de IA corregida por el desarrollador.** El desarrollador detectó esa
 diferencia, pidió primero un análisis de impacto sin editar y aprobó después el
