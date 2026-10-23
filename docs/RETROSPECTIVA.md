@@ -9,9 +9,9 @@ Angular con búsqueda e historial, actualizaciones y recuperación tras reconexi
 SSE, y replay progresivo mediante HTTP protegido. También incluye instalación
 local reproducible, pruebas backend y Angular, y CI.
 
-El alcance se contrasta con el [contrato común](common-spec.md), los
-[criterios de evaluación](CRITERIOS-EVALUACION.md) y el
-[requisito de replay](DEMO-REPLAY.md). Es una demostración local de una sola
+El alcance se contrasta con el [contrato común](Documentos_originales/common-spec.md), los
+[criterios de evaluación](Documentos_originales/CRITERIOS-EVALUACION.md) y el
+[requisito de replay](Documentos_originales/DEMO-REPLAY.md). Es una demostración local de una sola
 instancia; no se presenta como plataforma productiva distribuida ni como entrega
 sin pendientes de evidencia. El video obligatorio sigue pendiente de adjuntar.
 
