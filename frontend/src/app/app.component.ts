@@ -9,6 +9,8 @@ import { StreamService } from './core/services/stream.service';
 import { TelemetryEvent } from './core/models/telemetry-event.model';
 import { ReplayControlsComponent } from './replay-controls/replay-controls.component';
 
+type ConnectionState = 'connecting' | 'connected' | 'reconnecting' | 'closed';
+
 @Component({
   selector: 'app-root',
   standalone: true,
@@ -19,6 +21,27 @@ import { ReplayControlsComponent } from './replay-controls/replay-controls.compo
 export class AppComponent implements OnInit, OnDestroy {
   private readonly fleetService = inject(FleetService);
   private readonly streamService = inject(StreamService);
+  get connectionState(): ConnectionState {
+    const status: unknown = this.streamService.connectionStatus?.();
+
+    if (
+      status === 'connecting' ||
+      status === 'connected' ||
+      status === 'reconnecting' ||
+      status === 'closed'
+    ) {
+      return status;
+    }
+
+    return 'connecting';
+  }
+
+  readonly connectionLabels: Record<ConnectionState, string> = {
+    connecting: 'Conectando SSE',
+    connected: 'SSE conectado',
+    reconnecting: 'Reconectando SSE',
+    closed: 'SSE desconectado',
+  };
   private streamSubscription?: Subscription;
   private searchSubscription?: Subscription;
   private readonly searchRequests = new Subject<number>();
@@ -62,22 +85,29 @@ export class AppComponent implements OnInit, OnDestroy {
   loading = true;
   error = '';
 
-  ngOnInit(): void {1
+  ngOnInit(): void {
     // Cancel both the debounce timer and any HTTP request on each new input/refresh.
-    this.searchSubscription = this.searchRequests.pipe(
-      switchMap(delayMs => timer(delayMs).pipe(
-        switchMap(() => this.searchText
-          ? this.fleetService.getVehicles(this.searchText)
-          : of(this.vehicles)),
-        catchError(() => {
-          this.searchError = 'No se pudo realizar la búsqueda de vehículos.';
-          return of(this.filteredVehicles);
-        }),
-      )),
-    ).subscribe(vehicles => {
-      this.filteredVehicles = vehicles;
-      this.searchLoading = false;
-    });
+    this.searchSubscription = this.searchRequests
+      .pipe(
+        switchMap((delayMs) =>
+          timer(delayMs).pipe(
+            switchMap(() =>
+              this.searchText
+                ? this.fleetService.getVehicles(this.searchText)
+                : of(this.vehicles),
+            ),
+            catchError(() => {
+              this.searchError =
+                'No se pudo realizar la búsqueda de vehículos.';
+              return of(this.filteredVehicles);
+            }),
+          ),
+        ),
+      )
+      .subscribe((vehicles) => {
+        this.filteredVehicles = vehicles;
+        this.searchLoading = false;
+      });
     this.loadVehicles();
     this.loadAlerts();
 
@@ -85,18 +115,18 @@ export class AppComponent implements OnInit, OnDestroy {
       next: (eventType) => {
         if (eventType === 'vehicle.updated') {
           this.loadVehicles();
-          if (this.selectedVehicle){
-             this.refreshSelectedVehicleHistory();
+          if (this.selectedVehicle) {
+            this.refreshSelectedVehicleHistory();
           }
         }
 
         if (eventType === 'alert.created') {
           this.loadAlerts();
         }
-        if(eventType=== 'stream.reconnected'){
+        if (eventType === 'stream.reconnected') {
           this.loadVehicles();
           this.loadAlerts();
-          if(this.selectedVehicle){
+          if (this.selectedVehicle) {
             this.refreshSelectedVehicleHistory();
           }
         }
@@ -158,20 +188,19 @@ export class AppComponent implements OnInit, OnDestroy {
       },
     });
   }
-  refreshSelectedVehicleHistory():void{
+  refreshSelectedVehicleHistory(): void {
     const vehicleId = this.selectedVehicle;
-    if(!vehicleId)return;
+    if (!vehicleId) return;
     this.fleetService.getVehicleEvents(vehicleId).subscribe({
-      next:(event)=>{
-        if (this.selectedVehicle !==vehicleId) return;
-        this.vehicleEvents=event;
-        this.historyError="";
+      next: (event) => {
+        if (this.selectedVehicle !== vehicleId) return;
+        this.vehicleEvents = event;
+        this.historyError = '';
       },
-        error: () => {
+      error: () => {
         if (this.selectedVehicle !== vehicleId) return;
         this.historyError = 'No se pudo cargar el historial.';
       },
-    })
+    });
   }
-
 }

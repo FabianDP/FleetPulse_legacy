@@ -1,1 +1,2 @@
-/* You can add global styles to this file, and also import other style files */
+* { box-sizing: border-box; }
+body { margin: 0; background: #edf2f5; font-family: 'Segoe UI', Arial, sans-serif; -webkit-font-smoothing: antialiased; }
